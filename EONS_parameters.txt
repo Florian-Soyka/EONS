@@ -1,4 +1,4 @@
-C:\Users\Soyka.Florian\Downloads\SENN PC Installation folder\SENN_PC_3-20-11
+SENN PC Installation folder\SENN_PC_3-20-11
 0.5*[1/(0.0175*2*pi)*1/(300*2*pi) 1/(0.0175*2*pi)+1/(300*2*pi) 1]
 [1/(25*2*pi)*1/(3e3*2*pi) 1/(25*2*pi)+1/(3e3*2*pi)  1]
 0.5*[1/(0.21*2*pi) 1] 

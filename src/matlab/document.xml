@@ -1,24 +1,21 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[classdef EONS_MF3 < matlab.apps.AppBase
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[classdef EONS < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
         LoadFileButton                matlab.ui.control.Button
         StatusLabel                   matlab.ui.control.Label
-        InputSignalUIAxes             matlab.ui.control.UIAxes
         HelpAboutButton               matlab.ui.control.Button
         TMinEditFieldLabel            matlab.ui.control.Label
         TMinEditField                 matlab.ui.control.NumericEditField
         TMaxEditFieldLabel            matlab.ui.control.Label
         TMaxEditField                 matlab.ui.control.NumericEditField
         ResetSignalButton             matlab.ui.control.Button
-        DerivativeUIAxes              matlab.ui.control.UIAxes
         DerivativeTypeButtonGroup     matlab.ui.container.ButtonGroup
         DifferenceQuotientButton      matlab.ui.control.RadioButton
         LowPassFilterButton           matlab.ui.control.RadioButton
         CornerFrequencyinHzEditFieldLabel  matlab.ui.control.Label
         CornerFrequencyinHzEditField  matlab.ui.control.NumericEditField
-        WPMUIAxes                     matlab.ui.control.UIAxes
         ShowFFTButton                 matlab.ui.control.Button
         ResultsUITable                matlab.ui.control.Table
         CalculateSENN                 matlab.ui.control.Button
@@ -27,6 +24,13 @@
         TMinSENNLabel                 matlab.ui.control.Label
         TMinRD_SENNEditField          matlab.ui.control.NumericEditField
         Image                         matlab.ui.control.Image
+        SENNsolverButtonGroup         matlab.ui.container.ButtonGroup
+        ReillyButton                  matlab.ui.control.ToggleButton
+        GhentUButton                  matlab.ui.control.ToggleButton
+        SENNstatus                    matlab.ui.control.EditField
+        InputSignalUIAxes             matlab.ui.control.UIAxes
+        DerivativeUIAxes              matlab.ui.control.UIAxes
+        WPMUIAxes                     matlab.ui.control.UIAxes
     end
 
     
@@ -205,7 +209,7 @@
             end    
         end
         
-        function RunSENN(app)            
+        function RunSENN_Reilly(app)            
             original_directory = pwd;
             %read location of SENN.exe from parameter file
             %SENN_directory = 'C:\Users\Soyka.Florian\Downloads\SENN PC Installation folder\SENN_PC_3-20-11';
@@ -280,8 +284,46 @@
             app.ResultsUITable.Data{2,3} = [num2str(amplitude,'%.4g') ' V/m']; 
             cd(original_directory);
         end
-    end
     
+    function RunSENN_GhentU(app)            
+            %prepare input
+            E = app.Derivative(:,2); %worst-case induction factor = 0.42 V/m / T/s
+            time = app.Derivative(:,1);
+            amplitude = max(abs(E));
+            duration = time(end)-time(1);
+            
+            Diamet = 20e-3; % mm 
+            Ltot = 20.5; % mm 
+            x = 0; y = 0; z = 0;
+            Tp = duration; ancat = 1; monbi = 1; Ibegin = 0; Iend = 0; SearchMode = 0;
+            SweepActI = 1; ElecInj = 0; 
+            model = 2; 
+            conf = 0; fileName = 'waveforms/phase_cutting.txt'; 
+            sinus_freq = 0;
+            
+            app.SENNstatus.Value = 'SENN Running - Please wait';
+            drawnow;
+            % run SENN
+            SENNfiberCP(num2str(Diamet),num2str(Ltot),num2str(x),num2str(y),num2str(z),num2str(Tp),...
+                num2str(ancat),num2str(monbi),num2str(Ibegin),num2str(Iend),num2str(SearchMode),...
+                num2str(SweepActI),num2str(ElecInj),num2str(model),num2str(conf),...
+                fileName,num2str(sinus_freq));
+           app.SENNstatus.Value = 'SENN Finished'; drawnow;
+           
+            %/5.6 due to the safety factor   /1000 for mV/m -> V/m
+           loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
+               num2str(Tp,6) '-' num2str(ancat) '-' num2str(monbi) '(FH-Conf' num2str(conf) ').mat'];
+           Threshold = load(loadName);
+           threshold =  0.001*Threshold.SweepAct/5.6;
+           delete(loadName);
+                        
+            %display results in table
+            EI_upper = ceil(amplitude/threshold*100);
+            app.ResultsUITable.Data{2,1} = '-';                
+            app.ResultsUITable.Data{2,2} = [num2str(EI_upper) ' % ( ' num2str(threshold,'%.4g') ' V/m)'];                
+            app.ResultsUITable.Data{2,3} = [num2str(amplitude,'%.4g') ' V/m']; 
+        end
+    end
 
     % Callbacks that handle component events
     methods (Access = private)
@@ -421,7 +463,12 @@
         % Button pushed function: CalculateSENN
         function CalculateSENNButtonPushed(app, event)
             if ~(isempty(app.OriginalSignal))
-                RunSENN(app);
+                if (app.ReillyButton.Value)
+                RunSENN_Reilly(app);
+                end
+                if (app.GhentUButton.Value)
+                RunSENN_GhentU(app);
+                end
             end
         end
 
@@ -448,79 +495,59 @@
 
             % Create EvaluationofNonSinusoidalMagneticFieldsUIFigure and hide until all components are created
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure = uifigure('Visible', 'off');
-            app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Position = [100 100 1207 766];
+            app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Position = [100 100 1207 815];
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Name = 'Evaluation of Non-Sinusoidal Magnetic Fields';
 
             % Create LoadFileButton
             app.LoadFileButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.LoadFileButton.ButtonPushedFcn = createCallbackFcn(app, @LoadFileButtonPushed, true);
-            app.LoadFileButton.Position = [614 143 100 22];
+            app.LoadFileButton.Position = [614 193 100 22];
             app.LoadFileButton.Text = 'Load File';
 
             % Create StatusLabel
             app.StatusLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.StatusLabel.Position = [46 21 1120 22];
+            app.StatusLabel.Position = [46 70 1120 22];
             app.StatusLabel.Text = 'Status:';
-
-            % Create InputSignalUIAxes
-            app.InputSignalUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            title(app.InputSignalUIAxes, 'Magnetic Flux Density')
-            xlabel(app.InputSignalUIAxes, 'Time / s')
-            ylabel(app.InputSignalUIAxes, 'Magnetic Flux Density / T')
-            app.InputSignalUIAxes.Box = 'on';
-            app.InputSignalUIAxes.XGrid = 'on';
-            app.InputSignalUIAxes.YGrid = 'on';
-            app.InputSignalUIAxes.Position = [46 463 522 257];
 
             % Create HelpAboutButton
             app.HelpAboutButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.HelpAboutButton.ButtonPushedFcn = createCallbackFcn(app, @HelpAboutButtonPushed, true);
-            app.HelpAboutButton.Position = [892 143 100 22];
+            app.HelpAboutButton.Position = [1062 192 100 22];
             app.HelpAboutButton.Text = 'Help / About';
 
             % Create TMinEditFieldLabel
             app.TMinEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.TMinEditFieldLabel.HorizontalAlignment = 'right';
-            app.TMinEditFieldLabel.Position = [65 418 39 22];
+            app.TMinEditFieldLabel.Position = [65 467 39 22];
             app.TMinEditFieldLabel.Text = 'T Min:';
 
             % Create TMinEditField
             app.TMinEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMinEditField.ValueChangedFcn = createCallbackFcn(app, @TMinEditFieldValueChanged, true);
-            app.TMinEditField.Position = [123 418 65 22];
+            app.TMinEditField.Position = [123 467 65 22];
 
             % Create TMaxEditFieldLabel
             app.TMaxEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.TMaxEditFieldLabel.HorizontalAlignment = 'right';
-            app.TMaxEditFieldLabel.Position = [204 418 42 22];
+            app.TMaxEditFieldLabel.Position = [204 467 42 22];
             app.TMaxEditFieldLabel.Text = 'T Max:';
 
             % Create TMaxEditField
             app.TMaxEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMaxEditField.ValueChangedFcn = createCallbackFcn(app, @TMaxEditFieldValueChanged, true);
-            app.TMaxEditField.Position = [261 418 65 22];
+            app.TMaxEditField.Position = [261 467 65 22];
 
             % Create ResetSignalButton
             app.ResetSignalButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.ResetSignalButton.ButtonPushedFcn = createCallbackFcn(app, @ResetSignalButtonPushed, true);
-            app.ResetSignalButton.Position = [350 418 100 22];
+            app.ResetSignalButton.Position = [350 467 100 22];
             app.ResetSignalButton.Text = 'Reset Signal';
-
-            % Create DerivativeUIAxes
-            app.DerivativeUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            title(app.DerivativeUIAxes, 'Induced Electrical Field')
-            xlabel(app.DerivativeUIAxes, 'Time / s')
-            ylabel(app.DerivativeUIAxes, 'Electrical Field / V/m')
-            app.DerivativeUIAxes.Box = 'on';
-            app.DerivativeUIAxes.XGrid = 'on';
-            app.DerivativeUIAxes.YGrid = 'on';
-            app.DerivativeUIAxes.Position = [613 463 564 257];
 
             % Create DerivativeTypeButtonGroup
             app.DerivativeTypeButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.DerivativeTypeButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @DerivativeTypeButtonGroupSelectionChanged, true);
             app.DerivativeTypeButtonGroup.Title = 'Derivative Type';
-            app.DerivativeTypeButtonGroup.Position = [654 374 142 69];
+            app.DerivativeTypeButtonGroup.Position = [654 423 142 69];
 
             % Create DifferenceQuotientButton
             app.DifferenceQuotientButton = uiradiobutton(app.DerivativeTypeButtonGroup);
@@ -536,70 +563,111 @@
             % Create CornerFrequencyinHzEditFieldLabel
             app.CornerFrequencyinHzEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.CornerFrequencyinHzEditFieldLabel.HorizontalAlignment = 'right';
-            app.CornerFrequencyinHzEditFieldLabel.Position = [816 376 136 22];
+            app.CornerFrequencyinHzEditFieldLabel.Position = [816 425 136 22];
             app.CornerFrequencyinHzEditFieldLabel.Text = 'Corner Frequency in Hz:';
 
             % Create CornerFrequencyinHzEditField
             app.CornerFrequencyinHzEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.CornerFrequencyinHzEditField.Limits = [0 Inf];
             app.CornerFrequencyinHzEditField.ValueChangedFcn = createCallbackFcn(app, @CornerFrequencyinHzEditFieldValueChanged, true);
-            app.CornerFrequencyinHzEditField.Position = [963 376 75 22];
+            app.CornerFrequencyinHzEditField.Position = [963 425 75 22];
             app.CornerFrequencyinHzEditField.Value = 10000;
-
-            % Create WPMUIAxes
-            app.WPMUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            title(app.WPMUIAxes, 'Weighted Peak Method')
-            xlabel(app.WPMUIAxes, 'Time / s')
-            ylabel(app.WPMUIAxes, 'Weighted Signal')
-            app.WPMUIAxes.Box = 'on';
-            app.WPMUIAxes.XGrid = 'on';
-            app.WPMUIAxes.YGrid = 'on';
-            app.WPMUIAxes.Position = [46 103 522 257];
 
             % Create ShowFFTButton
             app.ShowFFTButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.ShowFFTButton.ButtonPushedFcn = createCallbackFcn(app, @ShowFFTButtonPushed, true);
-            app.ShowFFTButton.Position = [468 418 100 22];
+            app.ShowFFTButton.Position = [468 467 100 22];
             app.ShowFFTButton.Text = 'Show FFT';
 
             % Create ResultsUITable
             app.ResultsUITable = uitable(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.ResultsUITable.ColumnName = {'Exposure Index (Lower Action Level)'; 'Exposure Index (Upper Action Level)'; 'Amplitude'};
             app.ResultsUITable.RowName = {'WPM, SENN'};
-            app.ResultsUITable.Position = [614 199 563 140];
+            app.ResultsUITable.Position = [614 248 563 140];
 
             % Create CalculateSENN
             app.CalculateSENN = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.CalculateSENN.ButtonPushedFcn = createCallbackFcn(app, @CalculateSENNButtonPushed, true);
-            app.CalculateSENN.Position = [755 143 102 22];
+            app.CalculateSENN.Position = [755 193 102 22];
             app.CalculateSENN.Text = 'Calculate SENN';
 
             % Create TMinEILabel
             app.TMinEILabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.TMinEILabel.HorizontalAlignment = 'right';
-            app.TMinEILabel.Position = [65 61 54 22];
+            app.TMinEILabel.Position = [65 110 54 22];
             app.TMinEILabel.Text = 'T Min EI:';
 
             % Create TMinWPMEditField
             app.TMinWPMEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMinWPMEditField.ValueChangedFcn = createCallbackFcn(app, @TMinWPMEditFieldValueChanged, true);
-            app.TMinWPMEditField.Position = [138 61 83 22];
+            app.TMinWPMEditField.Position = [138 110 83 22];
 
             % Create TMinSENNLabel
             app.TMinSENNLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.TMinSENNLabel.HorizontalAlignment = 'right';
-            app.TMinSENNLabel.Position = [869 418 83 22];
+            app.TMinSENNLabel.Position = [869 467 83 22];
             app.TMinSENNLabel.Text = 'T Min SENN:';
 
             % Create TMinRD_SENNEditField
             app.TMinRD_SENNEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMinRD_SENNEditField.ValueChangedFcn = createCallbackFcn(app, @TMinRD_SENNEditFieldValueChanged, true);
-            app.TMinRD_SENNEditField.Position = [963 418 75 22];
+            app.TMinRD_SENNEditField.Position = [963 467 75 22];
 
             % Create Image
             app.Image = uiimage(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.Image.Position = [838 14 351 117];
+            app.Image.Position = [838 11 351 117];
             app.Image.ImageSource = 'Logo IFA RGB.gif';
+
+            % Create SENNsolverButtonGroup
+            app.SENNsolverButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.SENNsolverButtonGroup.TitlePosition = 'centertop';
+            app.SENNsolverButtonGroup.Title = 'SENN solver';
+            app.SENNsolverButtonGroup.Position = [611 81 117 79];
+
+            % Create ReillyButton
+            app.ReillyButton = uitogglebutton(app.SENNsolverButtonGroup);
+            app.ReillyButton.Text = 'Reilly';
+            app.ReillyButton.Position = [7 32 100 22];
+            app.ReillyButton.Value = true;
+
+            % Create GhentUButton
+            app.GhentUButton = uitogglebutton(app.SENNsolverButtonGroup);
+            app.GhentUButton.Text = 'Ghent U.';
+            app.GhentUButton.Position = [7 6 100 22];
+
+            % Create SENNstatus
+            app.SENNstatus = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'text');
+            app.SENNstatus.Position = [887 193 100 22];
+
+            % Create InputSignalUIAxes
+            app.InputSignalUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            title(app.InputSignalUIAxes, 'Magnetic Flux Density')
+            xlabel(app.InputSignalUIAxes, 'Time / s')
+            ylabel(app.InputSignalUIAxes, 'Magnetic Flux Density / T')
+            app.InputSignalUIAxes.XGrid = 'on';
+            app.InputSignalUIAxes.YGrid = 'on';
+            app.InputSignalUIAxes.Box = 'on';
+            app.InputSignalUIAxes.Position = [46 512 522 257];
+
+            % Create DerivativeUIAxes
+            app.DerivativeUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            title(app.DerivativeUIAxes, 'Induced Electrical Field')
+            xlabel(app.DerivativeUIAxes, 'Time / s')
+            ylabel(app.DerivativeUIAxes, 'Electrical Field / V/m')
+            app.DerivativeUIAxes.XGrid = 'on';
+            app.DerivativeUIAxes.YGrid = 'on';
+            app.DerivativeUIAxes.Box = 'on';
+            app.DerivativeUIAxes.Position = [613 512 564 257];
+
+            % Create WPMUIAxes
+            app.WPMUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            title(app.WPMUIAxes, 'Weighted Peak Method')
+            xlabel(app.WPMUIAxes, 'Time / s')
+            ylabel(app.WPMUIAxes, 'Weighted Signal')
+            app.WPMUIAxes.XGrid = 'on';
+            app.WPMUIAxes.YGrid = 'on';
+            app.WPMUIAxes.Box = 'on';
+            app.WPMUIAxes.Position = [46 152 522 257];
 
             % Show the figure after all components are created
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Visible = 'on';
@@ -610,7 +678,7 @@
     methods (Access = public)
 
         % Construct app
-        function app = EONS_MF3
+        function app = EONS
 
             % Create UIFigure and components
             createComponents(app)

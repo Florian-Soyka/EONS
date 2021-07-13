@@ -10,4 +10,9 @@ https://us.artechhouse.com/Assets/reslib/reilly/reilly.html
 
 A non-sinusoidal sample waveform is provided in the waveforms\ folder. It was recorded during welding using phase cutting.
 
+# COPYRIGHT
+Reilly's SENN nerve stimulation model was obtained from: 
+https://www.fda.gov/about-fda/cdrh-offices/senn-nerve-stimulation
+and is included in the repository.
+
 

@@ -3,6 +3,16 @@
     % Properties that correspond to app components
     properties (Access = public)
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
+        LmmEditField                  matlab.ui.control.NumericEditField
+        LmmEditFieldLabel             matlab.ui.control.Label
+        DmmEditField                  matlab.ui.control.NumericEditField
+        DmmEditFieldLabel             matlab.ui.control.Label
+        MembraneButtonGroup           matlab.ui.container.ButtonGroup
+        SRBButton                     matlab.ui.control.ToggleButton
+        SEButton                      matlab.ui.control.ToggleButton
+        CRRSSButton                   matlab.ui.control.ToggleButton
+        FHButton                      matlab.ui.control.ToggleButton
+        HHButton                      matlab.ui.control.ToggleButton
         SENNstatus                    matlab.ui.control.EditField
         SENNsolverButtonGroup         matlab.ui.container.ButtonGroup
         GhentUButton                  matlab.ui.control.ToggleButton
@@ -31,6 +41,9 @@
         WPMUIAxes                     matlab.ui.control.UIAxes
         DerivativeUIAxes              matlab.ui.control.UIAxes
         InputSignalUIAxes             matlab.ui.control.UIAxes
+        ContextMenu                   matlab.ui.container.ContextMenu
+        Menu                          matlab.ui.container.Menu
+        Menu2                         matlab.ui.container.Menu
     end
 
     
@@ -285,34 +298,36 @@
             cd(original_directory);
         end
     
-    function RunSENN_GhentU(app)            
+    function RunSENN_GhentU(app)
+            modelNames = {'HH','FH','CRRSS','SE','SRB'};
             %prepare input
             E = app.Derivative(:,2); %worst-case induction factor = 0.42 V/m / T/s
             time = app.Derivative(:,1);
             amplitude = max(abs(E));
             duration = time(end)-time(1);
             
-            Diamet = 20e-3; % mm 
-            Ltot = 20.5; % mm 
-            x = 0; y = 0; z = 0;
-            Tp = duration; ancat = 1; monbi = 1; Ibegin = 0; Iend = 0; SearchMode = 0;
-            SweepActI = 1; ElecInj = 0; 
-            model = 2; 
-            conf = 0; fileName = 'waveforms/phase_cutting.txt'; 
-            sinus_freq = 0;
+            % Customizable pars
+            Diamet = app.DmmEditField.Value; % mm 
+            Ltot = app.LmmEditField.Value; % mm  
+            model = find([app.HHButton.Value,app.FHButton.Value,app.CRRSSButton.Value,app.SEButton.Value,app.SRBButton.Value]);
+            fileName = 'waveforms/phase_cutting.txt'; 
+                       
+            % Fixed pars
+            sinus_freq = 0; conf = 0; Tp = duration; x = 0; y = 0; z = 0; Ibegin = 0; Iend = 0; SearchMode = 0;
+            SweepActI = 1; ElecInj = 0; ancat = 1; monbi = 1;
             
-            app.SENNstatus.Value = 'SENN Running - Please wait';
+            app.SENNstatus.Value = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Running - Please wait'];
             drawnow;
             % run SENN
             SENNfiberCP(num2str(Diamet),num2str(Ltot),num2str(x),num2str(y),num2str(z),num2str(Tp),...
                 num2str(ancat),num2str(monbi),num2str(Ibegin),num2str(Iend),num2str(SearchMode),...
                 num2str(SweepActI),num2str(ElecInj),num2str(model),num2str(conf),...
                 fileName,num2str(sinus_freq));
-           app.SENNstatus.Value = 'SENN Finished'; drawnow;
+           app.SENNstatus.Value = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished']; drawnow;
            
             %/5.6 due to the safety factor   /1000 for mV/m -> V/m
            loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
-               num2str(Tp,6) '-' num2str(ancat) '-' num2str(monbi) '(FH-Conf' num2str(conf) ').mat'];
+               num2str(Tp,6) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
            Threshold = load(loadName);
            threshold =  0.001*Threshold.SweepAct/5.6;
            delete(loadName);
@@ -668,6 +683,73 @@
             % Create SENNstatus
             app.SENNstatus = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'text');
             app.SENNstatus.Position = [887 193 100 22];
+
+            % Create MembraneButtonGroup
+            app.MembraneButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.MembraneButtonGroup.Title = 'Membrane';
+            app.MembraneButtonGroup.Position = [740 24 100 136];
+
+            % Create HHButton
+            app.HHButton = uitogglebutton(app.MembraneButtonGroup);
+            app.HHButton.Text = 'HH';
+            app.HHButton.Position = [18 89 50 22];
+            app.HHButton.Value = true;
+
+            % Create FHButton
+            app.FHButton = uitogglebutton(app.MembraneButtonGroup);
+            app.FHButton.Text = 'FH';
+            app.FHButton.Position = [17 67 51 22];
+
+            % Create CRRSSButton
+            app.CRRSSButton = uitogglebutton(app.MembraneButtonGroup);
+            app.CRRSSButton.Text = 'CRRSS';
+            app.CRRSSButton.Position = [17 45 52 22];
+
+            % Create SEButton
+            app.SEButton = uitogglebutton(app.MembraneButtonGroup);
+            app.SEButton.Text = 'SE';
+            app.SEButton.Position = [18 23 50 22];
+
+            % Create SRBButton
+            app.SRBButton = uitogglebutton(app.MembraneButtonGroup);
+            app.SRBButton.Text = 'SRB';
+            app.SRBButton.Position = [19 2 49 22];
+
+            % Create DmmEditFieldLabel
+            app.DmmEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.DmmEditFieldLabel.HorizontalAlignment = 'right';
+            app.DmmEditFieldLabel.Position = [399 112 55 22];
+            app.DmmEditFieldLabel.Text = 'D (mm)';
+
+            % Create DmmEditField
+            app.DmmEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
+            app.DmmEditField.Position = [469 112 69 20];
+            app.DmmEditField.Value = 0.02;
+
+            % Create LmmEditFieldLabel
+            app.LmmEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.LmmEditFieldLabel.HorizontalAlignment = 'right';
+            app.LmmEditFieldLabel.Position = [400 81 55 22];
+            app.LmmEditFieldLabel.Text = 'L (mm)';
+
+            % Create LmmEditField
+            app.LmmEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
+            app.LmmEditField.Position = [470 81 69 20];
+            app.LmmEditField.Value = 20.5;
+
+            % Create ContextMenu
+            app.ContextMenu = uicontextmenu(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+
+            % Create Menu
+            app.Menu = uimenu(app.ContextMenu);
+            app.Menu.Text = 'Menu';
+
+            % Create Menu2
+            app.Menu2 = uimenu(app.ContextMenu);
+            app.Menu2.Text = 'Menu2';
+            
+            % Assign app.ContextMenu
+            app.MembraneButtonGroup.ContextMenu = app.ContextMenu;
 
             % Show the figure after all components are created
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Visible = 'on';

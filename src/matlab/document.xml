@@ -3,6 +3,11 @@
     % Properties that correspond to app components
     properties (Access = public)
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
+        UseSineButton                 matlab.ui.control.Button
+        ScreenshotButton              matlab.ui.control.Button
+        CalculateGSENNButton          matlab.ui.control.Button
+        SENNGhentUParametersButtonGroup  matlab.ui.container.ButtonGroup
+        ReillysValuesButton           matlab.ui.control.Button
         LmmEditField                  matlab.ui.control.NumericEditField
         LmmEditFieldLabel             matlab.ui.control.Label
         DmmEditField                  matlab.ui.control.NumericEditField
@@ -13,16 +18,12 @@
         CRRSSButton                   matlab.ui.control.ToggleButton
         FHButton                      matlab.ui.control.ToggleButton
         HHButton                      matlab.ui.control.ToggleButton
-        SENNstatus                    matlab.ui.control.EditField
-        SENNsolverButtonGroup         matlab.ui.container.ButtonGroup
-        GhentUButton                  matlab.ui.control.ToggleButton
-        ReillyButton                  matlab.ui.control.ToggleButton
         Image                         matlab.ui.control.Image
         TMinRD_SENNEditField          matlab.ui.control.NumericEditField
-        TMinSENNLabel                 matlab.ui.control.Label
+        TMinElectricFieldLabel        matlab.ui.control.Label
         TMinWPMEditField              matlab.ui.control.NumericEditField
-        TMinEILabel                   matlab.ui.control.Label
-        CalculateSENN                 matlab.ui.control.Button
+        TMinWeightedSignalLabel       matlab.ui.control.Label
+        CalculateRSENNButton          matlab.ui.control.Button
         ResultsUITable                matlab.ui.control.Table
         ShowFFTButton                 matlab.ui.control.Button
         CornerFrequencyinHzEditField  matlab.ui.control.NumericEditField
@@ -46,17 +47,18 @@
         Menu2                         matlab.ui.container.Menu
     end
 
-    
+
     properties (Access = private)
         OriginalSignal % The signal that is loaded from the file
         FilteredSignal % The signal that is potentially altered and used for subsequent calculations
         Derivative % The derivative of the signal
         dt % The sampling time
         parameters % Parameters read from file at startup
+        fileName % the absolute path and name of the loaded file
     end
-    
+
     methods (Access = private)
-        
+
         function UpdateDerivative(app)
             if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
                 %Update Derivative
@@ -68,7 +70,7 @@
                 else
                     [numd,dend] = bilinear([1 0], [1/(app.CornerFrequencyinHzEditField.Value*2*pi) 1], 1 / app.dt);
                     dB = filter(numd, dend, app.FilteredSignal(:,2));
-                end               
+                end
                 %Check if we have to cut the signal
                 value = app.TMinRD_SENNEditField.Value;
                 if (value > temp(1)) && (value < temp(end))
@@ -77,13 +79,14 @@
                     dB = dB(index:end);
                 end
                 temp = [temp 0.42*dB]; %dB to E
-                app.Derivative = temp;                
-                plot(app.DerivativeUIAxes, app.Derivative(:,1), app.Derivative(:,2));                
-                legend(app.DerivativeUIAxes,'off');
-                axis(app.DerivativeUIAxes,'auto');                
+                app.Derivative = temp;
+                plot(app.DerivativeUIAxes, app.Derivative(:,1), app.Derivative(:,2),"Color",[0.8500, 0.3250, 0.0980]);
+                amplitude = max(abs(app.Derivative(:,2)));
+                legend(app.DerivativeUIAxes,['Derivative with Amplitude: ' num2str(amplitude,'%.4g') ' V/m']);
+                axis(app.DerivativeUIAxes,'auto');
             end
         end
-        
+
         function UpdateWPM(app)
             if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
                 %Retrieve num, den values from parameter file
@@ -92,53 +95,54 @@
                 den_lower = eval(app.parameters(3));
                 num_upper = eval(app.parameters(4));
                 den_upper = eval(app.parameters(5));
-                
+
                 %Lower Action Level
                 %Calculate Filter Parameters and apply WPM
                 %[numd,dend] = bilinear(0.5*[1/(0.0175*2*pi)*1/(300*2*pi) 1/(0.0175*2*pi)+1/(300*2*pi) 1], [1/(25*2*pi)*1/(3e3*2*pi) 1/(25*2*pi)+1/(3e3*2*pi)  1], 1/app.dt);
                 [numd,dend] = bilinear(num_lower, den_lower, 1/app.dt);
                 wpm_LAL = filter(numd, dend, app.FilteredSignal(:,2));
                 %cut some part of the signal?
-                %cutoff_start = ceil(length(wpm_LAL) * 0.01); 
+                %cutoff_start = ceil(length(wpm_LAL) * 0.01);
                 %wpm_LAL = wpm_LAL(cutoff_start:end);
-   
+
                 %Upper Action Level
                 %[numd,dend] = bilinear(0.5*[1/(0.21*2*pi) 1], [1/(3000*2*pi) 1], 1/app.dt);
                 [numd,dend] = bilinear(num_upper, den_upper, 1/app.dt);
                 wpm_UAL = filter(numd, dend, app.FilteredSignal(:,2));
-                
+
                 time = app.FilteredSignal(:,1);
-                
+
                 %Check if we have to cut the signal for the EI evaluation
-                value = app.TMinWPMEditField.Value;                            
+                value = app.TMinWPMEditField.Value;
                 if (value > time(1)) && (value < time(end))
                     index = find(time > value);
                     time = time(index:end);
                     wpm_LAL = wpm_LAL(index:end);
                     wpm_UAL = wpm_UAL(index:end);
-                end                
+                end
 
-                %Plot 
-                handles = [0 0];
-                handles(1) = plot(app.WPMUIAxes, time, wpm_LAL,'b');   
+                %check if the EIs are different if we leave out the first 1% of the signal. If so, leave out the first 1%
+                first_n_samples = ceil(0.01 * length(wpm_UAL));
+                if (( max(abs(wpm_UAL)) > max(abs(wpm_UAL(first_n_samples:end)))))
+                    time = time(first_n_samples:end);
+                    wpm_UAL = wpm_UAL(first_n_samples:end);
+                end
+
+                %Plot just the Upper Action Level since the Lower is not relevant here
+                handle = plot(app.WPMUIAxes, time, wpm_UAL,'Color',[0.4660, 0.6740, 0.1880]);
                 hold(app.WPMUIAxes,'on')
-                [~, index_LAL] = max(abs(wpm_LAL));
-                plot(app.WPMUIAxes, time(index_LAL), wpm_LAL(index_LAL),'bo');   
-                handles(2) = plot(app.WPMUIAxes, time, wpm_UAL,'r');   
                 [~, index_UAL] = max(abs(wpm_UAL));
-                plot(app.WPMUIAxes, time(index_UAL), wpm_UAL(index_UAL),'ro');                   
+                plot(app.WPMUIAxes, time(index_UAL), wpm_UAL(index_UAL),'o','Color',[0.4660, 0.6740, 0.1880],'MarkerFaceColor',[0.4660, 0.6740, 0.1880]);
                 hold(app.WPMUIAxes,'off')
-                axis(app.WPMUIAxes,'auto'); 
-                %Calculate EIs
-                EI_lower = ceil(max(abs(wpm_LAL))*100);
+                axis(app.WPMUIAxes,'auto');
+                %Calculate EI
                 EI_upper = ceil(max(abs(wpm_UAL))*100);
-                legend(handles,'Lower Action Level', 'Upper Action Level');                                
+                legend(handle, ['Weighted Signal with EI: ' num2str(EI_upper) ' %']);
                 %put EI in results table
-                app.ResultsUITable.Data{1,1} = [num2str(EI_lower) ' %'];
-                app.ResultsUITable.Data{1,2} = [num2str(EI_upper) ' %'];
+                app.ResultsUITable.Data{1,1} = [num2str(EI_upper) ' %'];
             end
         end
-        
+
         function ShowFFT(app)
             if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
                 %taken from MATLAB FFT doc
@@ -150,21 +154,21 @@
                 f = 1/app.dt*(0:(floor(L/2)))/L;
                 figure;
                 ax = gca;
-                plot(ax, f,P1) 
+                plot(ax, f,P1)
                 title(ax,'Single-Sided Amplitude Spectrum of the Magnetic Field')
                 xlabel(ax,'f (Hz)')
                 ylabel(ax,'|A(f)|')
             end
         end
-               
+
         function results = CalculateActionLevels(app, frequency)
             %use TF parameters from file, otherwise EMFV
-            if(app.parameters(6) == 'true')                
+            if(app.parameters(6) == 'true')
                 num_lower = eval(app.parameters(2));
                 den_lower = eval(app.parameters(3));
                 num_upper = eval(app.parameters(4));
                 den_upper = eval(app.parameters(5));
-                s = 1i*frequency*2*pi;                                               
+                s = 1i*frequency*2*pi;
                 %Lower Action Level
                 s_num = [];
                 for k=0:length(num_lower)-1
@@ -173,9 +177,9 @@
                 s_den = [];
                 for k=0:length(den_lower)-1
                     s_den = [s^k s_den];
-                end               
+                end
                 LAL = abs(1/((s_num * num_lower') / (s_den * den_lower')));
-                
+
                 %Upper Action Level
                 s_num = [];
                 for k=0:length(num_upper)-1
@@ -184,9 +188,9 @@
                 s_den = [];
                 for k=0:length(den_upper)-1
                     s_den = [s^k s_den];
-                end                
+                end
                 UAL = abs(1/((s_num * num_upper') / (s_den * den_upper')));
-                
+
                 results = [LAL, UAL];
             else
                 %calculate EMFV action levels in Tesla for the given frequency
@@ -199,7 +203,7 @@
                         UAL = 0.14;
                     end
                 end
-                
+
                 %Lower Action Level
                 LAL = 2000; %in mT
                 if (frequency > 0.0175 )
@@ -217,12 +221,12 @@
                         end
                     end
                 end
-                
+
                 results = [LAL/1000, UAL/1000];
-            end    
+            end
         end
-        
-        function RunSENN_Reilly(app)            
+
+        function RunSENN_Reilly(app)
             original_directory = pwd;
             %read location of SENN.exe from parameter file
             %SENN_directory = 'C:\Users\Soyka.Florian\Downloads\SENN PC Installation folder\SENN_PC_3-20-11';
@@ -232,13 +236,13 @@
                 return;
             end
             cd(SENN_directory);
-            
+
             %prepare input
             E = app.Derivative(:,2); %worst-case induction factor = 0.42 V/m / T/s
             time = app.Derivative(:,1);
             amplitude = max(abs(E));
-            
-            %prepare input file (XYfile.txt) 
+
+            %prepare input file (XYfile.txt)
             %SENN only allows for an input length of 8000 samples
             duration = time(end)-time(1);
             dt_senn = duration / 8000;
@@ -246,7 +250,7 @@
             %normalize to 1 and time in ms
             save_matrix = [time(1:index_step:end)*1000 E(1:index_step:end) ./ max(abs(E(1:index_step:end)))];
             writematrix(save_matrix,'XYfile.txt','Delimiter','tab');
-            
+
             %prepare SENN parameter file (inparam.txt), adjust XPD, FINAL and NTRP
             %set NTRP such that dt_senn becomes < 0.005 ms, warn if NTRP > 13
             NTRP = num2str(ceil(index_step*app.dt*1000 / 0.005));
@@ -260,18 +264,22 @@
             inparam_str = [inparam_str ' PHASE=0.0,' newline ' FREQ2=0.0,' newline ' PHASE2=0.0,' newline ' AMP2=0.0,' newline ' NSINES=10,' newline ' DCOFF=0.0,' newline ' TAUS=0.0,' newline ' VREF=0.0,' newline ' NP=1,' newline ' FS=1,' newline ' S=1,' newline ' NTRP=' NTRP ',' newline ' &END' newline];
             inparam_str = [inparam_str ' &CONTROL' newline ' ITHR=1,' newline ' VTH=80.0,' newline ' NTHNODE=3,' newline ' DELT=0.0002,' newline ' DELT2M=4.0,' newline ' FINAL=' dur_string ',' newline ' IPRNT=50,' newline ' &END'];
             writematrix(inparam_str,'inparam.txt','QuoteStrings',0)
-            
+
             %run SENN
             if ~(isfile('SENN.exe'))
                 uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'The SENN executable cannot be found.','Error');
-                return;                
+                return;
             end
+            app.StatusLabel.Text = ['SENN (Reilly) Running - Please wait and close the SENN.exe window once the run is finished (without saving the changes).'];
+            drawnow;
             system('SENN.exe');
-            
+            app.StatusLabel.Text = ['SENN (Reilly) Finished'];
+            drawnow;
+
             %while SENN is runnig this program is waiting. The user has to terminate SENN
             if ~(isfile('data.out'))
                 uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'The data.out file cannot be found.','Error');
-                return;                
+                return;
             end
             fid = fopen('data.out','r');
             data_text = fscanf(fid,'%s');
@@ -279,64 +287,62 @@
             %first search for 'ENDOFRUN'
             indices = strfind(data_text,'ENDOFRUN');
             if (isempty(indices))
-                app.ResultsUITable.Data{2,1} = 'An error occured running SENN';
+                app.ResultsUITable.Data{2,1} = 'An error occured running SENN (Reilly)';
                 app.ResultsUITable.Data{2,2} = '-';
-                app.ResultsUITable.Data{2,3} = '-';                  
                 cd(original_directory);
                 return;
             end
-            
+
             indices = strfind(data_text,'I=');
             %*30 for conversion from mA/cm^2 to V/m and /5.6 due to the safety factor
             threshold = 30*str2double(data_text(indices(end)+2:indices(end)+10)) / 5.6;
-                        
+
             %display results in table
             EI_upper = ceil(amplitude/threshold*100);
-            app.ResultsUITable.Data{2,1} = '-';                
-            app.ResultsUITable.Data{2,2} = [num2str(EI_upper) ' % ( ' num2str(threshold,'%.4g') ' V/m)'];                
-            app.ResultsUITable.Data{2,3} = [num2str(amplitude,'%.4g') ' V/m']; 
+            app.ResultsUITable.Data{2,1} = [num2str(EI_upper) ' %'];
+            app.ResultsUITable.Data{2,2} = [num2str(threshold,'%.4g') ' V/m'];
             cd(original_directory);
         end
-    
-    function RunSENN_GhentU(app)
+
+        function RunSENN_GhentU(app)
             modelNames = {'HH','FH','CRRSS','SE','SRB'};
             %prepare input
             E = app.Derivative(:,2); %worst-case induction factor = 0.42 V/m / T/s
             time = app.Derivative(:,1);
             amplitude = max(abs(E));
             duration = time(end)-time(1);
-            
+
             % Customizable pars
-            Diamet = app.DmmEditField.Value; % mm 
-            Ltot = app.LmmEditField.Value; % mm  
+            Diamet = app.DmmEditField.Value; % mm
+            Ltot = app.LmmEditField.Value; % mm
             model = find([app.HHButton.Value,app.FHButton.Value,app.CRRSSButton.Value,app.SEButton.Value,app.SRBButton.Value]);
-            fileName = 'waveforms/phase_cutting.txt'; 
-                       
+
             % Fixed pars
             sinus_freq = 0; conf = 0; Tp = duration; x = 0; y = 0; z = 0; Ibegin = 0; Iend = 0; SearchMode = 0;
             SweepActI = 1; ElecInj = 0; ancat = 1; monbi = 1;
-            
-            app.SENNstatus.Value = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Running - Please wait'];
+
+            app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Running - Please wait'];
             drawnow;
             % run SENN
+            % TODO: could we pass [time E] instead of the magnetic flux density file?
             SENNfiberCP(num2str(Diamet),num2str(Ltot),num2str(x),num2str(y),num2str(z),num2str(Tp),...
                 num2str(ancat),num2str(monbi),num2str(Ibegin),num2str(Iend),num2str(SearchMode),...
                 num2str(SweepActI),num2str(ElecInj),num2str(model),num2str(conf),...
-                fileName,num2str(sinus_freq));
-           app.SENNstatus.Value = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished']; drawnow;
-           
+                app.fileName,num2str(sinus_freq));
+            app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished'];
+            drawnow;
+
             %/5.6 due to the safety factor   /1000 for mV/m -> V/m
-           loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
-               num2str(Tp,6) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
-           Threshold = load(loadName);
-           threshold =  0.001*Threshold.SweepAct/5.6;
-           delete(loadName);
-                        
+            loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
+                num2str(Tp,6) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
+            Threshold = load(loadName);
+            threshold =  0.001*Threshold.SweepAct/5.6;
+            delete(loadName);
+
             %display results in table
             EI_upper = ceil(amplitude/threshold*100);
-            app.ResultsUITable.Data{2,1} = '-';                
-            app.ResultsUITable.Data{2,2} = [num2str(EI_upper) ' % ( ' num2str(threshold,'%.4g') ' V/m)'];                
-            app.ResultsUITable.Data{2,3} = [num2str(amplitude,'%.4g') ' V/m']; 
+            app.ResultsUITable.Data{3,1} = [num2str(EI_upper) ' %'];
+            app.ResultsUITable.Data{3,2} = [num2str(threshold,'%.4g') ' V/m'];
         end
     end
 
@@ -346,20 +352,20 @@
         % Code that executes after component creation
         function startupFcn(app)
             %init results table
-            app.ResultsUITable.ColumnName = {'Exposure Index (Lower Action Level)','Exposure Index (Upper Action Level)','Amplitude'};
-            app.ResultsUITable.RowName = {'WPM','SENN'};
-            app.ResultsUITable.Data = {'-','-','-';'-','-','-'};
+            app.ResultsUITable.ColumnName = {'Exposure Index', 'Threshold (V/m)'};
+            app.ResultsUITable.RowName = {'WPM', 'SENN (Reilly)', 'SENN (Ghent U.)'};
+            app.ResultsUITable.Data = {'-','-';'-','-';'-','-'};
             %https://de.mathworks.com/help/matlab/ref/matlab.ui.control.tableappd.addstyle.html
             s = uistyle('HorizontalAlignment','center');
             addStyle(app.ResultsUITable,s);
-            
+
             if isfile('EONS_parameters.txt')
                 %read in parameter file
-                app.parameters = readmatrix('EONS_parameters.txt','OutputType','string','NumHeaderLines',0,'Delimiter','');           
+                app.parameters = readmatrix('EONS_parameters.txt','OutputType','string','NumHeaderLines',0,'Delimiter','');
             else
                 uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Parameters file could not be read. Please provide EONS_parameters.txt and restart.','Error');
             end
-            
+
             drawnow;
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.WindowState = 'maximized';
         end
@@ -370,10 +376,11 @@
             [file, path] = uigetfile('*.txt');
             if ~isequal(file,0)
                 file_data = readmatrix(fullfile(path,file));
+                app.fileName = fullfile(path,file);
                 delta_t = diff(file_data(:,1));
                 if max(delta_t - mean(delta_t)) > 1e-6
                     uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Time spacing needs to be constant','Error');
-                    return;                    
+                    return;
                 end
                 app.dt = mean(delta_t);
                 app.StatusLabel.Text = ['File ' file ' loaded. The sampling time is ' num2str(app.dt,'%g') ' s.'];
@@ -382,26 +389,27 @@
                 app.OriginalSignal(:,1) = file_data(:,1);
                 app.OriginalSignal(:,2) = file_data(:,2);
                 app.FilteredSignal = app.OriginalSignal;
-                
-                %plot 
+
+                %plot
                 plot(app.InputSignalUIAxes, app.FilteredSignal(:,1), app.FilteredSignal(:,2));
                 axis(app.InputSignalUIAxes,'auto');
+                legend(app.InputSignalUIAxes, 'Input Signal')
                 app.TMinEditField.Value = min(app.FilteredSignal(:,1));
                 app.TMinWPMEditField.Value = min(app.FilteredSignal(:,1));
                 app.TMinRD_SENNEditField.Value = min(app.FilteredSignal(:,1));
-                app.TMaxEditField.Value = max(app.FilteredSignal(:,1)); 
-                app.ResultsUITable.Data = {'-','-','-';'-','-','-'};
+                app.TMaxEditField.Value = max(app.FilteredSignal(:,1));
+                app.ResultsUITable.Data = {'-','-';'-','-';'-','-'};
                 UpdateDerivative(app);
                 UpdateWPM(app);
-                %Get focus to main window back
-                drawnow;
-                figure(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure) 
-            end       
+            end
+            %Get focus to main window back
+            drawnow;
+            figure(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure)
         end
 
         % Button pushed function: HelpAboutButton
         function HelpAboutButtonPushed(app, event)
-             uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,{'See Manual.pdf for help.';'For inquiries contact florian.soyka@dguv.de'},'Help / About','Icon','');
+            uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,{'See Manual.pdf for help.';'For inquiries contact florian.soyka@dguv.de'},'Help / About','Icon','');
         end
 
         % Button pushed function: ResetSignalButton
@@ -412,7 +420,7 @@
                 app.TMinEditField.Value = min(app.FilteredSignal(:,1));
                 app.TMinWPMEditField.Value = min(app.FilteredSignal(:,1));
                 app.TMinRD_SENNEditField.Value = min(app.FilteredSignal(:,1));
-                app.TMaxEditField.Value = max(app.FilteredSignal(:,1));  
+                app.TMaxEditField.Value = max(app.FilteredSignal(:,1));
                 axis(app.InputSignalUIAxes,'auto');
                 UpdateDerivative(app);
                 UpdateWPM(app);
@@ -445,7 +453,7 @@
             if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
                 if(value <= app.FilteredSignal(1,1))
                     return;
-                end                
+                end
                 index = find(app.FilteredSignal(:,1) < value,1,'last');
                 temp = app.FilteredSignal(1:index,1);
                 temp = [temp app.FilteredSignal(1:index,2)];
@@ -454,7 +462,7 @@
                 axis(app.InputSignalUIAxes,'auto');
                 UpdateDerivative(app);
                 UpdateWPM(app);
-            end            
+            end
         end
 
         % Selection changed function: DerivativeTypeButtonGroup
@@ -475,30 +483,85 @@
             ShowFFT(app);
         end
 
-        % Button pushed function: CalculateSENN
-        function CalculateSENNButtonPushed(app, event)
+        % Button pushed function: CalculateRSENNButton
+        function CalculateRSENNButtonButtonPushed(app, event)
             if ~(isempty(app.OriginalSignal))
-                if (app.ReillyButton.Value)
                 RunSENN_Reilly(app);
-                end
-                if (app.GhentUButton.Value)
-                RunSENN_GhentU(app);
-                end
             end
         end
 
         % Value changed function: TMinWPMEditField
         function TMinWPMEditFieldValueChanged(app, event)
-           if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
+            if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
                 UpdateWPM(app);
-           end            
+            end
         end
 
         % Value changed function: TMinRD_SENNEditField
         function TMinRD_SENNEditFieldValueChanged(app, event)
             if ~(isempty(app.OriginalSignal)) %has a signal been loaded?
-                UpdateDerivative(app);                
+                UpdateDerivative(app);
             end
+        end
+
+        % Button pushed function: CalculateGSENNButton
+        function CalculateGSENNButtonPushed(app, event)
+            if ~(isempty(app.OriginalSignal))
+                RunSENN_GhentU(app);
+            end
+        end
+
+        % Button pushed function: ScreenshotButton
+        function ScreenshotButtonPushed(app, event)
+            filter = {'*.jpg';'*.png';'*.tif';'*.pdf'};
+            [filename,filepath] = uiputfile(filter);
+            if ischar(filename)
+                exportapp(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,[filepath filename]);
+            end
+            %Get focus to main window back
+            drawnow;
+            figure(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure)
+        end
+
+        % Button pushed function: ReillysValuesButton
+        function ReillysValuesButtonPushed(app, event)
+            app.LmmEditField.Value = 100;
+            app.DmmEditField.Value = 0.02;
+            app.FHButton.Value = 1;
+        end
+
+        % Button pushed function: UseSineButton
+        function UseSineButtonPushed(app, event)
+            %create sine
+            frequency = 100;
+            duration = 10 * 1/frequency;
+            dt = 0.05e-3;
+            time = [0:dt:duration]';
+            amplitude = 1.1 / 0.42 / (2*pi* frequency);
+            sine = amplitude .* sin(2*pi*frequency*time - pi/2); %add a phase offset
+
+            app.dt = dt;
+            app.StatusLabel.Text = ['Using a sine with ' num2str(frequency) ' Hz'];
+            file_length = length(time);
+            app.OriginalSignal = zeros(file_length,2);
+            app.OriginalSignal(:,1) = time;
+            app.OriginalSignal(:,2) = sine;
+            app.FilteredSignal = app.OriginalSignal;
+
+            %plot
+            plot(app.InputSignalUIAxes, app.FilteredSignal(:,1), app.FilteredSignal(:,2));
+            axis(app.InputSignalUIAxes,'auto');
+            legend(app.InputSignalUIAxes, 'Input Signal')
+            app.TMinEditField.Value = min(app.FilteredSignal(:,1));
+            app.TMinWPMEditField.Value = min(app.FilteredSignal(:,1));
+            app.TMinRD_SENNEditField.Value = min(app.FilteredSignal(:,1));
+            app.TMaxEditField.Value = max(app.FilteredSignal(:,1));
+            app.ResultsUITable.Data = {'-','-';'-','-';'-','-'};
+            UpdateDerivative(app);
+            UpdateWPM(app);
+            %Get focus to main window back
+            drawnow;
+            figure(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure)
         end
     end
 
@@ -510,7 +573,7 @@
 
             % Create EvaluationofNonSinusoidalMagneticFieldsUIFigure and hide until all components are created
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure = uifigure('Visible', 'off');
-            app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Position = [100 100 1207 815];
+            app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Position = [50 50 1600 1000];
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Name = 'Evaluation of Non-Sinusoidal Magnetic Fields';
 
             % Create InputSignalUIAxes
@@ -521,17 +584,17 @@
             app.InputSignalUIAxes.XGrid = 'on';
             app.InputSignalUIAxes.YGrid = 'on';
             app.InputSignalUIAxes.Box = 'on';
-            app.InputSignalUIAxes.Position = [46 512 522 257];
+            app.InputSignalUIAxes.Position = [46 630 635 324];
 
             % Create DerivativeUIAxes
             app.DerivativeUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             title(app.DerivativeUIAxes, 'Induced Electrical Field')
             xlabel(app.DerivativeUIAxes, 'Time / s')
-            ylabel(app.DerivativeUIAxes, 'Electrical Field / V/m')
+            ylabel(app.DerivativeUIAxes, 'Electric Field / V/m')
             app.DerivativeUIAxes.XGrid = 'on';
             app.DerivativeUIAxes.YGrid = 'on';
             app.DerivativeUIAxes.Box = 'on';
-            app.DerivativeUIAxes.Position = [613 512 564 257];
+            app.DerivativeUIAxes.Position = [844 631 676 324];
 
             % Create WPMUIAxes
             app.WPMUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
@@ -541,58 +604,58 @@
             app.WPMUIAxes.XGrid = 'on';
             app.WPMUIAxes.YGrid = 'on';
             app.WPMUIAxes.Box = 'on';
-            app.WPMUIAxes.Position = [46 152 522 257];
+            app.WPMUIAxes.Position = [47 205 635 311];
 
             % Create LoadFileButton
             app.LoadFileButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.LoadFileButton.ButtonPushedFcn = createCallbackFcn(app, @LoadFileButtonPushed, true);
-            app.LoadFileButton.Position = [614 193 100 22];
+            app.LoadFileButton.Position = [881 263 100 22];
             app.LoadFileButton.Text = 'Load File';
 
             % Create StatusLabel
             app.StatusLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.StatusLabel.Position = [46 70 1120 22];
+            app.StatusLabel.Position = [882 299 562 22];
             app.StatusLabel.Text = 'Status:';
 
             % Create HelpAboutButton
             app.HelpAboutButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.HelpAboutButton.ButtonPushedFcn = createCallbackFcn(app, @HelpAboutButtonPushed, true);
-            app.HelpAboutButton.Position = [1062 192 100 22];
+            app.HelpAboutButton.Position = [1420 263 100 22];
             app.HelpAboutButton.Text = 'Help / About';
 
             % Create TMinEditFieldLabel
             app.TMinEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.TMinEditFieldLabel.HorizontalAlignment = 'right';
-            app.TMinEditFieldLabel.Position = [65 467 39 22];
+            app.TMinEditFieldLabel.Position = [65 573 39 22];
             app.TMinEditFieldLabel.Text = 'T Min:';
 
             % Create TMinEditField
             app.TMinEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMinEditField.ValueChangedFcn = createCallbackFcn(app, @TMinEditFieldValueChanged, true);
-            app.TMinEditField.Position = [123 467 65 22];
+            app.TMinEditField.Position = [123 573 65 22];
 
             % Create TMaxEditFieldLabel
             app.TMaxEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.TMaxEditFieldLabel.HorizontalAlignment = 'right';
-            app.TMaxEditFieldLabel.Position = [204 467 42 22];
+            app.TMaxEditFieldLabel.Position = [204 573 42 22];
             app.TMaxEditFieldLabel.Text = 'T Max:';
 
             % Create TMaxEditField
             app.TMaxEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMaxEditField.ValueChangedFcn = createCallbackFcn(app, @TMaxEditFieldValueChanged, true);
-            app.TMaxEditField.Position = [261 467 65 22];
+            app.TMaxEditField.Position = [261 573 65 22];
 
             % Create ResetSignalButton
             app.ResetSignalButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.ResetSignalButton.ButtonPushedFcn = createCallbackFcn(app, @ResetSignalButtonPushed, true);
-            app.ResetSignalButton.Position = [350 467 100 22];
+            app.ResetSignalButton.Position = [350 573 100 22];
             app.ResetSignalButton.Text = 'Reset Signal';
 
             % Create DerivativeTypeButtonGroup
             app.DerivativeTypeButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.DerivativeTypeButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @DerivativeTypeButtonGroupSelectionChanged, true);
             app.DerivativeTypeButtonGroup.Title = 'Derivative Type';
-            app.DerivativeTypeButtonGroup.Position = [654 423 142 69];
+            app.DerivativeTypeButtonGroup.Position = [930 529 142 69];
 
             % Create DifferenceQuotientButton
             app.DifferenceQuotientButton = uiradiobutton(app.DerivativeTypeButtonGroup);
@@ -608,86 +671,72 @@
             % Create CornerFrequencyinHzEditFieldLabel
             app.CornerFrequencyinHzEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.CornerFrequencyinHzEditFieldLabel.HorizontalAlignment = 'right';
-            app.CornerFrequencyinHzEditFieldLabel.Position = [816 425 136 22];
+            app.CornerFrequencyinHzEditFieldLabel.Position = [1092 531 136 22];
             app.CornerFrequencyinHzEditFieldLabel.Text = 'Corner Frequency in Hz:';
 
             % Create CornerFrequencyinHzEditField
             app.CornerFrequencyinHzEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.CornerFrequencyinHzEditField.Limits = [0 Inf];
             app.CornerFrequencyinHzEditField.ValueChangedFcn = createCallbackFcn(app, @CornerFrequencyinHzEditFieldValueChanged, true);
-            app.CornerFrequencyinHzEditField.Position = [963 425 75 22];
+            app.CornerFrequencyinHzEditField.Position = [1239 531 75 22];
             app.CornerFrequencyinHzEditField.Value = 10000;
 
             % Create ShowFFTButton
             app.ShowFFTButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.ShowFFTButton.ButtonPushedFcn = createCallbackFcn(app, @ShowFFTButtonPushed, true);
-            app.ShowFFTButton.Position = [468 467 100 22];
+            app.ShowFFTButton.Position = [468 573 100 22];
             app.ShowFFTButton.Text = 'Show FFT';
 
             % Create ResultsUITable
             app.ResultsUITable = uitable(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.ResultsUITable.ColumnName = {'Exposure Index (Lower Action Level)'; 'Exposure Index (Upper Action Level)'; 'Amplitude'};
-            app.ResultsUITable.RowName = {'WPM, SENN'};
-            app.ResultsUITable.Position = [614 248 563 140];
+            app.ResultsUITable.ColumnName = {'Exposure Index'; 'Threshold (V/m)'};
+            app.ResultsUITable.RowName = {'WPM, SENN (Reilly), SENN (Ghent U.)'};
+            app.ResultsUITable.Position = [880 364 563 128];
 
-            % Create CalculateSENN
-            app.CalculateSENN = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
-            app.CalculateSENN.ButtonPushedFcn = createCallbackFcn(app, @CalculateSENNButtonPushed, true);
-            app.CalculateSENN.Position = [755 193 102 22];
-            app.CalculateSENN.Text = 'Calculate SENN';
+            % Create CalculateRSENNButton
+            app.CalculateRSENNButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
+            app.CalculateRSENNButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateRSENNButtonButtonPushed, true);
+            app.CalculateRSENNButton.Position = [1085 263 100 22];
+            app.CalculateRSENNButton.Text = 'SENN (Reilly)';
 
-            % Create TMinEILabel
-            app.TMinEILabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.TMinEILabel.HorizontalAlignment = 'right';
-            app.TMinEILabel.Position = [65 110 54 22];
-            app.TMinEILabel.Text = 'T Min EI:';
+            % Create TMinWeightedSignalLabel
+            app.TMinWeightedSignalLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.TMinWeightedSignalLabel.HorizontalAlignment = 'right';
+            app.TMinWeightedSignalLabel.Position = [48 177 129 22];
+            app.TMinWeightedSignalLabel.Text = 'T Min Weighted Signal:';
 
             % Create TMinWPMEditField
             app.TMinWPMEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMinWPMEditField.ValueChangedFcn = createCallbackFcn(app, @TMinWPMEditFieldValueChanged, true);
-            app.TMinWPMEditField.Position = [138 110 83 22];
+            app.TMinWPMEditField.Position = [196 177 83 22];
 
-            % Create TMinSENNLabel
-            app.TMinSENNLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.TMinSENNLabel.HorizontalAlignment = 'right';
-            app.TMinSENNLabel.Position = [869 467 83 22];
-            app.TMinSENNLabel.Text = 'T Min SENN:';
+            % Create TMinElectricFieldLabel
+            app.TMinElectricFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.TMinElectricFieldLabel.HorizontalAlignment = 'right';
+            app.TMinElectricFieldLabel.Position = [1117 573 111 22];
+            app.TMinElectricFieldLabel.Text = 'T Min Electric Field:';
 
             % Create TMinRD_SENNEditField
             app.TMinRD_SENNEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
             app.TMinRD_SENNEditField.ValueChangedFcn = createCallbackFcn(app, @TMinRD_SENNEditFieldValueChanged, true);
-            app.TMinRD_SENNEditField.Position = [963 467 75 22];
+            app.TMinRD_SENNEditField.Position = [1239 573 75 22];
 
             % Create Image
             app.Image = uiimage(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.Image.Position = [838 11 351 117];
+            app.Image.HorizontalAlignment = 'left';
+            app.Image.Position = [47 48 304 72];
             app.Image.ImageSource = 'Logo IFA RGB.gif';
 
-            % Create SENNsolverButtonGroup
-            app.SENNsolverButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.SENNsolverButtonGroup.TitlePosition = 'centertop';
-            app.SENNsolverButtonGroup.Title = 'SENN solver';
-            app.SENNsolverButtonGroup.Position = [611 81 117 79];
-
-            % Create ReillyButton
-            app.ReillyButton = uitogglebutton(app.SENNsolverButtonGroup);
-            app.ReillyButton.Text = 'Reilly';
-            app.ReillyButton.Position = [7 32 100 22];
-            app.ReillyButton.Value = true;
-
-            % Create GhentUButton
-            app.GhentUButton = uitogglebutton(app.SENNsolverButtonGroup);
-            app.GhentUButton.Text = 'Ghent U.';
-            app.GhentUButton.Position = [7 6 100 22];
-
-            % Create SENNstatus
-            app.SENNstatus = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'text');
-            app.SENNstatus.Position = [887 193 100 22];
+            % Create SENNGhentUParametersButtonGroup
+            app.SENNGhentUParametersButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.SENNGhentUParametersButtonGroup.TitlePosition = 'centertop';
+            app.SENNGhentUParametersButtonGroup.Title = 'SENN (Ghent U.) Parameters';
+            app.SENNGhentUParametersButtonGroup.Position = [881 54 393 184];
 
             % Create MembraneButtonGroup
-            app.MembraneButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.MembraneButtonGroup = uibuttongroup(app.SENNGhentUParametersButtonGroup);
             app.MembraneButtonGroup.Title = 'Membrane';
-            app.MembraneButtonGroup.Position = [740 24 100 136];
+            app.MembraneButtonGroup.Position = [22 20 100 136];
 
             % Create HHButton
             app.HHButton = uitogglebutton(app.MembraneButtonGroup);
@@ -716,26 +765,50 @@
             app.SRBButton.Position = [19 2 49 22];
 
             % Create DmmEditFieldLabel
-            app.DmmEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.DmmEditFieldLabel = uilabel(app.SENNGhentUParametersButtonGroup);
             app.DmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.DmmEditFieldLabel.Position = [399 112 55 22];
+            app.DmmEditFieldLabel.Position = [155 63 55 22];
             app.DmmEditFieldLabel.Text = 'D (mm)';
 
             % Create DmmEditField
-            app.DmmEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
-            app.DmmEditField.Position = [469 112 69 20];
+            app.DmmEditField = uieditfield(app.SENNGhentUParametersButtonGroup, 'numeric');
+            app.DmmEditField.Position = [225 63 69 20];
             app.DmmEditField.Value = 0.02;
 
             % Create LmmEditFieldLabel
-            app.LmmEditFieldLabel = uilabel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.LmmEditFieldLabel = uilabel(app.SENNGhentUParametersButtonGroup);
             app.LmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.LmmEditFieldLabel.Position = [400 81 55 22];
+            app.LmmEditFieldLabel.Position = [154 32 55 22];
             app.LmmEditFieldLabel.Text = 'L (mm)';
 
             % Create LmmEditField
-            app.LmmEditField = uieditfield(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'numeric');
-            app.LmmEditField.Position = [470 81 69 20];
+            app.LmmEditField = uieditfield(app.SENNGhentUParametersButtonGroup, 'numeric');
+            app.LmmEditField.Position = [224 32 69 20];
             app.LmmEditField.Value = 20.5;
+
+            % Create ReillysValuesButton
+            app.ReillysValuesButton = uibutton(app.SENNGhentUParametersButtonGroup, 'push');
+            app.ReillysValuesButton.ButtonPushedFcn = createCallbackFcn(app, @ReillysValuesButtonPushed, true);
+            app.ReillysValuesButton.Position = [182 109 100 22];
+            app.ReillysValuesButton.Text = 'Reilly''s Values';
+
+            % Create CalculateGSENNButton
+            app.CalculateGSENNButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
+            app.CalculateGSENNButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateGSENNButtonPushed, true);
+            app.CalculateGSENNButton.Position = [1197 263 108 22];
+            app.CalculateGSENNButton.Text = 'SENN (Ghent U.)';
+
+            % Create ScreenshotButton
+            app.ScreenshotButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
+            app.ScreenshotButton.ButtonPushedFcn = createCallbackFcn(app, @ScreenshotButtonPushed, true);
+            app.ScreenshotButton.Position = [1312 263 94 22];
+            app.ScreenshotButton.Text = 'Screenshot';
+
+            % Create UseSineButton
+            app.UseSineButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
+            app.UseSineButton.ButtonPushedFcn = createCallbackFcn(app, @UseSineButtonPushed, true);
+            app.UseSineButton.Position = [994 263 80 22];
+            app.UseSineButton.Text = 'Use Sine';
 
             % Create ContextMenu
             app.ContextMenu = uicontextmenu(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);

@@ -15,7 +15,9 @@ DISPLAY = 0;
 EONS = 1;                       % Coupling with EONS (evaluation of non-sinusoidal magnetic fields) solver 
 % The program uses the extracellular potential reference to make all calculations, this option is
 % only for plotting.
-OrderOfSolution = 1;
+
+OrderOfSolution = 1; %1 or Reilly SENN = 2
+
 % 1. Initialisation of parameters
 if DISPLAY
 disp('1. Initialising parameters and settings')
@@ -38,8 +40,10 @@ SENNmodel = str2double(model); % Selection of neuronal model.1 = Hodgkin-Huxley,
 % 1.2. Dependent or fixed variables in the SENN-model
 % Convention: we start with the dendrites and end with the synapse
 Nmyel = 75e7*Douter;                    % Number of myelin layers
-dinner = 0.64*Douter;                         % Inner diameter (mm)
-lnode = 0.0015;                              % length of a node (mm)
+%dinner = 0.64*Douter;                         % Inner diameter (mm)
+dinner = 0.7*Douter;                         % Inner diameter (mm), Reilly SENN
+%lnode = 0.0015;                              % length of a node (mm)
+lnode = 0.0025;                              % length of a node (mm), Reilly SENN
 linter = 100*Douter;                         % lenght of an internode (mm)
 Re = 3;                                     % extracellular resistivity (Ohm*m)
 if SYMM == 1
@@ -58,7 +62,8 @@ end
 T = 3;                        % Simulation time (ms)
 
 d = dinner*ones(C,1); % Diameter vector (mm)
-Ra = 0.7*ones(C,1);                % Axial resistivity vector (Ohm*m) 
+Ra = 1.1*ones(C,1);                % Axial resistivity vector (Ohm*m), Reilly SENN
+%Ra = 0.7*ones(C,1);                % Axial resistivity vector (Ohm*m) 
                                 % --> Resistivity of 0.1 kOhm*cm is used
 Cnode = 0;            % Capacity at ranvier nodes (F/m^2)
 Cinter = 0.01/Nmyel;
@@ -67,7 +72,8 @@ Cm = [repmat([Cnode;Cinter],reps,1);Cnode];  % Membrane capacitance per unit are
                                 % --> Universal membrane capacitance is used.
 CFL = 1;                        % Courant number
 c = 100;          % Travelspeed of electric impulses through the neuron (m/s)
-Temp = 37*ones(C,1);        % Temperature (°C)
+%Temp = 37*ones(C,1);        % Temperature (°C)
+Temp = 22*ones(C,1);        % Temperature (°C), Reilly SENN
 tol = 1e-50;                    % Tolerance used in matlab fsolve (default is 1e-6)
 DynTol = 1e-50;                  % Dynamic tolerance used in Matlab fsolve (if 0, use abs. tol)
 % SI-units (All voltages are in mV)
@@ -922,12 +928,20 @@ A0 = spdiags(DiagA0,[-1 0 1],S,S);
 if BoundaryConditions == 0
 % Adding Neumann boundary conditions:
 % dV/dx(0) = dV/dx(L) = 0 -> V(-1) = V(1) and V(L+1)=V(L-1) 
+
+%Reilly SENN: remove factor 2: factor 2 corresponds with halving of the capacitance if the sealed end is at the center of the Ranviernode
 % begin point:
-A0(1,1) = 2*GacfI(1); %#ok<*SPRIX>
-A0(1,2) = -2*GacbI(2);
+%A0(1,1) = 2*GacfI(1); %#ok<*SPRIX>
+%A0(1,2) = -2*GacbI(2);
+A0(1,1) = GacfI(1); %#ok<*SPRIX>
+A0(1,2) = -1*GacbI(2);
+
 % end point:
-A0(S,S-1) = -2*GacfI(S-1);
-A0(S,S) = 2*GacbI(S);
+%A0(S,S-1) = -2*GacfI(S-1);
+%A0(S,S) = 2*GacbI(S);
+A0(S,S-1) = -1*GacfI(S-1);
+A0(S,S) = GacbI(S);
+
 else
 if BoundaryConditions == 1 || BoundaryConditions == 2
 % Adding Dirichlet boundary conditions:

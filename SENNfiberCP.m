@@ -1,12 +1,18 @@
 % Single neuron SENN solver -- Implemented SENN model: parametervalues are
 % based on [McNeal1976], [Tasaki1955] and [FitzHugh1962]
-function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,SweepActI,ElecInj,model,conf,fileName,sinus_freq)
+function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,SweepActI,ElecInj,model,conf,fileName,sinus_freq,varargin)
  LLx0s = str2double(x);LLy0s = str2double(y); LLz0s = str2double(z);
  LLTp = str2double(Tp); LLancat = str2double(ancat); LLmonbi = str2double(monbi);
  LLconf = str2double(conf); LLIbegin = str2double(Ibegin);LLIend = str2double(Iend);
  LLSearchMode=str2double(SearchMode);
  LLElecInj = str2double(ElecInj); LLSweepActI = str2double(SweepActI);
  sinus_freq = str2double(sinus_freq);
+ if nargin >= 19
+     error('Too many input arguments');
+ elseif nargin == 18
+     EONSWaveform = varargin{1};
+ end
+ 
 tic;                            % Start stopwatch timer
 Acc = 0;                        % Discretisation accuracy (0 = low, 1 = high)
 reference = 1;                  % Voltage reference. 0: extracellular potential. 1: rest potential. 
@@ -881,8 +887,8 @@ end
 end
 end
 else 			% SweepActI = 1
-    if exist(fileName) %#ok<EXIST>
     if ~EONS  % no EONS
+    if exist(fileName) %#ok<EXIST>    
 fnameStruct = load(fileName);
 Waveform = fnameStruct.s.Waveform; 
 Waveform = interp1(Waveform(:,1),Waveform(:,2),(0:dt:Nt*dt)','linear','extrap');
@@ -899,12 +905,7 @@ Ve(:,Nps:2*Nps-2) = -Ve(:,Nps:2*Nps-2);          % Biphasic pulse: initial phase
 Ve(:,2*Nps-1:end) = 0;
 end
 end
-    else % EONS 
-Waveform = load(fileName);
-Waveform = interp1(Waveform(:,1),Waveform(:,2)./max(Waveform(:,2)),(0:dt:Nt*dt),'linear','extrap');
-Ve = -(-1)^(Iancat-1).*IIelecs.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
-    end
-    else
+else
 r = @(x) sqrt((x-Ix0s).^2+Iy0s^2+Iz0s^2);
 VeP = (-1)^(Iancat-1).*Re.*IIelecs./(4.*pi.*r(dxI./2+[0; cumsum(dxI(1:end-1))]));
 Nps = ceil(ITps/dt-1/2);
@@ -918,6 +919,10 @@ else
 Ve(:,Nps:2*Nps-2) = -Ve(:,Nps:2*Nps-2);          % Biphasic pulse: initial phasetime matches with monophasic stimulation -> double total stimulationtime
 Ve(:,2*Nps-1:end) = 0;
 end
+    end
+    else % EONS 
+Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(EONSWaveform(:,2)),(0:dt:Nt*dt),'linear','extrap');
+Ve = -(-1)^(Iancat-1).*IIelecs.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
     end
 end
 

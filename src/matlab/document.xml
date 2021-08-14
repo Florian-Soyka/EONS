@@ -3,6 +3,9 @@
     % Properties that correspond to app components
     properties (Access = public)
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
+        Image4                        matlab.ui.control.Image
+        Image3                        matlab.ui.control.Image
+        Image2                        matlab.ui.control.Image
         UseSineButton                 matlab.ui.control.Button
         ScreenshotButton              matlab.ui.control.Button
         CalculateGSENNButton          matlab.ui.control.Button
@@ -324,11 +327,10 @@
             app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Running - Please wait'];
             drawnow;
             % run SENN
-            % TODO: could we pass [time E] instead of the magnetic flux density file?
             SENNfiberCP(num2str(Diamet),num2str(Ltot),num2str(x),num2str(y),num2str(z),num2str(Tp),...
                 num2str(ancat),num2str(monbi),num2str(Ibegin),num2str(Iend),num2str(SearchMode),...
                 num2str(SweepActI),num2str(ElecInj),num2str(model),num2str(conf),...
-                app.fileName,num2str(sinus_freq));
+                'nofilename',num2str(sinus_freq),app.Derivative);
             app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished'];
             drawnow;
 
@@ -368,6 +370,16 @@
 
             drawnow;
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.WindowState = 'maximized';
+            
+            screenSize = get(groot,'ScreenSize');
+            screenWidth = screenSize(3);
+            screenHeight = screenSize(4);
+            left = screenWidth*0.1;
+            bottom = screenHeight*0.1;
+            width = screenWidth*0.8;
+            height = screenHeight*0.8;
+            drawnow;
+            app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Position = [left bottom width height]; 
         end
 
         % Button pushed function: LoadFileButton
@@ -575,6 +587,7 @@
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure = uifigure('Visible', 'off');
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Position = [50 50 1600 1000];
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Name = 'Evaluation of Non-Sinusoidal Magnetic Fields';
+            app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Scrollable = 'on';
 
             % Create InputSignalUIAxes
             app.InputSignalUIAxes = uiaxes(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
@@ -809,6 +822,21 @@
             app.UseSineButton.ButtonPushedFcn = createCallbackFcn(app, @UseSineButtonPushed, true);
             app.UseSineButton.Position = [994 263 80 22];
             app.UseSineButton.Text = 'Use Sine';
+
+            % Create Image2
+            app.Image2 = uiimage(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.Image2.Position = [373 68 119 105];
+            app.Image2.ImageSource = 'logo_UGent_EN_RGB_2400_color.png';
+
+            % Create Image3
+            app.Image3 = uiimage(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.Image3.Position = [432 83 240 100];
+            app.Image3.ImageSource = 'icon_UGent_EA_EN_RGB_2400_color.png';
+
+            % Create Image4
+            app.Image4 = uiimage(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.Image4.Position = [395 34 314 84];
+            app.Image4.ImageSource = 'waves_v5.svg';
 
             % Create ContextMenu
             app.ContextMenu = uicontextmenu(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);

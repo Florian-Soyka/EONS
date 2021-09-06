@@ -2455,7 +2455,7 @@ Rbm = SweepActImat(:,:,:,:,:,2)./SweepActImat(:,:,:,:,:,1);
             modelstr = 'SRB';
     end
 save(['SweepSENNSR-' num2str(LLx0s) '-' num2str(LLy0s) '-' num2str(LLz0s) '-'...  
-    num2str(LLTp) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr '-Conf' num2str(LLconf) ').mat'],'SweepAct');
+    num2str(LLTp,5) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr '-Conf' num2str(LLconf) ').mat'],'SweepAct');
 %save('x0sValuesSENN_FH_Conf1.mat','x0sValues');
 %save('y0sValuesSENN_FH_Conf1.mat','y0sValues');
 %save('z0sValuesSENN_FH_Conf1.mat','z0sValues');

@@ -336,7 +336,7 @@
 
             %/5.6 due to the safety factor   /1000 for mV/m -> V/m
             loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
-                num2str(Tp,6) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
+                num2str(Tp,5) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
             Threshold = load(loadName);
             threshold =  0.001*Threshold.SweepAct/5.6;
             delete(loadName);

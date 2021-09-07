@@ -7,10 +7,23 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  LLSearchMode=str2double(SearchMode);
  LLElecInj = str2double(ElecInj); LLSweepActI = str2double(SweepActI);
  sinus_freq = str2double(sinus_freq);
- if nargin >= 19
+ if nargin >= 22
      error('Too many input arguments');
+ elseif nargin == 17
  elseif nargin == 18
-     EONSWaveform = varargin{1};
+ EONSWaveform = varargin{1};
+ elseif nargin == 19
+ EONSWaveform = varargin{1};
+ SolverMaxStep = str2double(varargin{2});    
+ elseif nargin == 20
+ EONSWaveform = varargin{1};
+ SolverMaxStep = str2double(varargin{2});
+ OrderOfSolution = str2double(varargin{3});    
+ elseif nargin == 21
+ EONSWaveform = varargin{1};
+ SolverMaxStep = str2double(varargin{2});
+ OrderOfSolution = str2double(varargin{3});
+ SamplingPeriod = str2double(varargin{4});    
  end
  
 tic;                            % Start stopwatch timer
@@ -22,7 +35,9 @@ EONS = 1;                       % Coupling with EONS (evaluation of non-sinusoid
 % The program uses the extracellular potential reference to make all calculations, this option is
 % only for plotting.
 
+if ~exist('OrderOfSolution','var')
 OrderOfSolution = 1; %1 or Reilly SENN = 2
+end
 
 % 1. Initialisation of parameters
 if DISPLAY
@@ -121,7 +136,13 @@ dxI = dx(index);
 dxfI = (dxI+circshift(dxI,-1,1))./2; 
 dt = min((dxfI(1:end-1)./c).*CFL);          % Discr. step in time  (s)
 dt=25e-6;
-dt=min(25e-6,0.025/sinus_freq);
+if ~exist('SolverMaxStep','var')
+    SolverMaxStep = 25;                 % (us) 
+end
+if ~exist('SamplingPeriod','var')
+    SamplingPeriod = 40;
+end
+dt=min(1e-6*SolverMaxStep,SamplingPeriod/sinus_freq);
 % -> scalar value: only one time step, because only one simulation time
 
 % 2. Plots and processing

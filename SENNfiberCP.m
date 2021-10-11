@@ -253,7 +253,7 @@ MonBi = LLmonbi;                  % 1 = only monophasic, 2 = only biphasic, 3 = 
 NeuronActivation = 1;           % Bool: if 1 check if neuron is activated.
 ActivationTable = 1;            % Bool: if 1 show overview of activation locations and times
 TableName = 'CRRSS Cortex';    % The name of the neuron displayed in the activation table
-Vtres = 50;                     % Treshold voltage (mV) for activation.
+Vtres = 80;                     % Treshold voltage (mV) for activation. % Soyka: from 50 to 80
 maxc = 10000000;                     % maximum propagation speed (m/s)
 Conditions = [0, 4;                  % Conditions for neuron propagation: 
               2, 2;             % -> 1 condition/row: every number refers to a number of active compartments
@@ -261,6 +261,7 @@ Conditions = [0, 4;                  % Conditions for neuron propagation:
                   ];            % F.i. Conditions = [1, 5]: the activation signal is propagating, if it
                                % propagates over 1 active compartment in the forward direction, and 5 compartments in the
                                 % backward direction.
+Conditions = [3, 3];           % Soyka: does that correspond to Reilly's criterium? What are the other rows for?
 fExact = [];                   % Frequencies for which an exact estimation is made of the MSOAf and MSOAb (Hz).
 
 % 3. Neuronal model 

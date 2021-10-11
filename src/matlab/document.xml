@@ -3,68 +3,68 @@
     % Properties that correspond to app components
     properties (Access = public)
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
-        PredefinedWaveformPanel        matlab.ui.container.Panel
-        DurationmsEditField            matlab.ui.control.NumericEditField
-        DurationmsEditFieldLabel       matlab.ui.control.Label
-        AmplitudeVmEditField           matlab.ui.control.NumericEditField
-        AmplitudeVmEditField_2Label    matlab.ui.control.Label
-        FrequencyHzEditField           matlab.ui.control.NumericEditField
-        FrequencyHzEditFieldLabel      matlab.ui.control.Label
-        TypeButtonGroup                matlab.ui.container.ButtonGroup
-        PulseButton                    matlab.ui.control.ToggleButton
-        SineButton                     matlab.ui.control.ToggleButton
-        SolveroptionsButtonGroup       matlab.ui.container.ButtonGroup
-        OrderofsolutionEditField       matlab.ui.control.NumericEditField
-        OrderofsolutionEditFieldLabel  matlab.ui.control.Label
-        SamplingperiodEditField        matlab.ui.control.NumericEditField
-        SamplingperiodEditFieldLabel   matlab.ui.control.Label
-        MaxstepusEditField             matlab.ui.control.NumericEditField
-        MaxstepusEditFieldLabel        matlab.ui.control.Label
-        Image4                         matlab.ui.control.Image
-        Image3                         matlab.ui.control.Image
-        Image2                         matlab.ui.control.Image
-        UseWaveformButton              matlab.ui.control.Button
-        ScreenshotButton               matlab.ui.control.Button
-        CalculateGSENNButton           matlab.ui.control.Button
-        SENNGhentUParametersButtonGroup  matlab.ui.container.ButtonGroup
-        ReillysValuesButton            matlab.ui.control.Button
-        LmmEditField                   matlab.ui.control.NumericEditField
-        LmmEditFieldLabel              matlab.ui.control.Label
-        DmmEditField                   matlab.ui.control.NumericEditField
-        DmmEditFieldLabel              matlab.ui.control.Label
-        MembraneButtonGroup            matlab.ui.container.ButtonGroup
-        SRBButton                      matlab.ui.control.ToggleButton
-        SEButton                       matlab.ui.control.ToggleButton
-        CRRSSButton                    matlab.ui.control.ToggleButton
-        FHButton                       matlab.ui.control.ToggleButton
-        HHButton                       matlab.ui.control.ToggleButton
-        Image                          matlab.ui.control.Image
-        TMinRD_SENNEditField           matlab.ui.control.NumericEditField
-        TMinElectricFieldLabel         matlab.ui.control.Label
-        TMinWPMEditField               matlab.ui.control.NumericEditField
-        TMinWeightedSignalLabel        matlab.ui.control.Label
-        CalculateRSENNButton           matlab.ui.control.Button
-        ResultsUITable                 matlab.ui.control.Table
-        ShowFFTButton                  matlab.ui.control.Button
-        CornerFrequencyinHzEditField   matlab.ui.control.NumericEditField
+        PredefinedWaveformPanel         matlab.ui.container.Panel
+        DurationmsEditField             matlab.ui.control.NumericEditField
+        DurationmsEditFieldLabel        matlab.ui.control.Label
+        AmplitudeVmEditField            matlab.ui.control.NumericEditField
+        AmplitudeVmEditField_2Label     matlab.ui.control.Label
+        FrequencyHzEditField            matlab.ui.control.NumericEditField
+        FrequencyHzEditFieldLabel       matlab.ui.control.Label
+        TypeButtonGroup                 matlab.ui.container.ButtonGroup
+        PulseButton                     matlab.ui.control.ToggleButton
+        SineButton                      matlab.ui.control.ToggleButton
+        SolveroptionsGhentUButtonGroup  matlab.ui.container.ButtonGroup
+        OrderofsolutionEditField        matlab.ui.control.NumericEditField
+        OrderofsolutionEditFieldLabel   matlab.ui.control.Label
+        SamplingperiodEditField         matlab.ui.control.NumericEditField
+        SamplingperiodEditFieldLabel    matlab.ui.control.Label
+        MaxstepusEditField              matlab.ui.control.NumericEditField
+        MaxstepusEditFieldLabel         matlab.ui.control.Label
+        Image4                          matlab.ui.control.Image
+        Image3                          matlab.ui.control.Image
+        Image2                          matlab.ui.control.Image
+        UseWaveformButton               matlab.ui.control.Button
+        ScreenshotButton                matlab.ui.control.Button
+        CalculateGSENNButton            matlab.ui.control.Button
+        SENNParametersButtonGroup       matlab.ui.container.ButtonGroup
+        ReillysValuesButton             matlab.ui.control.Button
+        LmmEditField                    matlab.ui.control.NumericEditField
+        LmmEditFieldLabel               matlab.ui.control.Label
+        DmmEditField                    matlab.ui.control.NumericEditField
+        DmmEditFieldLabel               matlab.ui.control.Label
+        MembraneGhentUButtonGroup       matlab.ui.container.ButtonGroup
+        SRBButton                       matlab.ui.control.ToggleButton
+        SEButton                        matlab.ui.control.ToggleButton
+        CRRSSButton                     matlab.ui.control.ToggleButton
+        FHButton                        matlab.ui.control.ToggleButton
+        HHButton                        matlab.ui.control.ToggleButton
+        Image                           matlab.ui.control.Image
+        TMinRD_SENNEditField            matlab.ui.control.NumericEditField
+        TMinElectricFieldLabel          matlab.ui.control.Label
+        TMinWPMEditField                matlab.ui.control.NumericEditField
+        TMinWeightedSignalLabel         matlab.ui.control.Label
+        CalculateRSENNButton            matlab.ui.control.Button
+        ResultsUITable                  matlab.ui.control.Table
+        ShowFFTButton                   matlab.ui.control.Button
+        CornerFrequencyinHzEditField    matlab.ui.control.NumericEditField
         CornerFrequencyinHzEditFieldLabel  matlab.ui.control.Label
-        DerivativeTypeButtonGroup      matlab.ui.container.ButtonGroup
-        LowPassFilterButton            matlab.ui.control.RadioButton
-        DifferenceQuotientButton       matlab.ui.control.RadioButton
-        ResetSignalButton              matlab.ui.control.Button
-        TMaxEditField                  matlab.ui.control.NumericEditField
-        TMaxEditFieldLabel             matlab.ui.control.Label
-        TMinEditField                  matlab.ui.control.NumericEditField
-        TMinEditFieldLabel             matlab.ui.control.Label
-        HelpAboutButton                matlab.ui.control.Button
-        StatusLabel                    matlab.ui.control.Label
-        LoadFileButton                 matlab.ui.control.Button
-        WPMUIAxes                      matlab.ui.control.UIAxes
-        DerivativeUIAxes               matlab.ui.control.UIAxes
-        InputSignalUIAxes              matlab.ui.control.UIAxes
-        ContextMenu                    matlab.ui.container.ContextMenu
-        Menu                           matlab.ui.container.Menu
-        Menu2                          matlab.ui.container.Menu
+        DerivativeTypeButtonGroup       matlab.ui.container.ButtonGroup
+        LowPassFilterButton             matlab.ui.control.RadioButton
+        DifferenceQuotientButton        matlab.ui.control.RadioButton
+        ResetSignalButton               matlab.ui.control.Button
+        TMaxEditField                   matlab.ui.control.NumericEditField
+        TMaxEditFieldLabel              matlab.ui.control.Label
+        TMinEditField                   matlab.ui.control.NumericEditField
+        TMinEditFieldLabel              matlab.ui.control.Label
+        HelpAboutButton                 matlab.ui.control.Button
+        StatusLabel                     matlab.ui.control.Label
+        LoadFileButton                  matlab.ui.control.Button
+        WPMUIAxes                       matlab.ui.control.UIAxes
+        DerivativeUIAxes                matlab.ui.control.UIAxes
+        InputSignalUIAxes               matlab.ui.control.UIAxes
+        ContextMenu                     matlab.ui.container.ContextMenu
+        Menu                            matlab.ui.container.Menu
+        Menu2                           matlab.ui.container.Menu
     end
 
 
@@ -827,69 +827,69 @@
             app.Image.Position = [47 48 304 72];
             app.Image.ImageSource = 'Logo IFA RGB.gif';
 
-            % Create SENNGhentUParametersButtonGroup
-            app.SENNGhentUParametersButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.SENNGhentUParametersButtonGroup.TitlePosition = 'centertop';
-            app.SENNGhentUParametersButtonGroup.Title = 'SENN (Ghent U.) Parameters';
-            app.SENNGhentUParametersButtonGroup.Position = [881 34 293 204];
+            % Create SENNParametersButtonGroup
+            app.SENNParametersButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.SENNParametersButtonGroup.TitlePosition = 'centertop';
+            app.SENNParametersButtonGroup.Title = 'SENN Parameters';
+            app.SENNParametersButtonGroup.Position = [881 34 293 204];
 
-            % Create MembraneButtonGroup
-            app.MembraneButtonGroup = uibuttongroup(app.SENNGhentUParametersButtonGroup);
-            app.MembraneButtonGroup.Title = 'Membrane';
-            app.MembraneButtonGroup.Position = [22 40 100 136];
+            % Create MembraneGhentUButtonGroup
+            app.MembraneGhentUButtonGroup = uibuttongroup(app.SENNParametersButtonGroup);
+            app.MembraneGhentUButtonGroup.Title = 'Membrane (Ghent U.)';
+            app.MembraneGhentUButtonGroup.Position = [11 40 129 136];
 
             % Create HHButton
-            app.HHButton = uitogglebutton(app.MembraneButtonGroup);
+            app.HHButton = uitogglebutton(app.MembraneGhentUButtonGroup);
             app.HHButton.Text = 'HH';
             app.HHButton.Position = [18 89 50 22];
             app.HHButton.Value = true;
 
             % Create FHButton
-            app.FHButton = uitogglebutton(app.MembraneButtonGroup);
+            app.FHButton = uitogglebutton(app.MembraneGhentUButtonGroup);
             app.FHButton.Text = 'FH';
             app.FHButton.Position = [17 67 51 22];
 
             % Create CRRSSButton
-            app.CRRSSButton = uitogglebutton(app.MembraneButtonGroup);
+            app.CRRSSButton = uitogglebutton(app.MembraneGhentUButtonGroup);
             app.CRRSSButton.Text = 'CRRSS';
             app.CRRSSButton.Position = [17 45 52 22];
 
             % Create SEButton
-            app.SEButton = uitogglebutton(app.MembraneButtonGroup);
+            app.SEButton = uitogglebutton(app.MembraneGhentUButtonGroup);
             app.SEButton.Text = 'SE';
             app.SEButton.Position = [18 23 50 22];
 
             % Create SRBButton
-            app.SRBButton = uitogglebutton(app.MembraneButtonGroup);
+            app.SRBButton = uitogglebutton(app.MembraneGhentUButtonGroup);
             app.SRBButton.Text = 'SRB';
             app.SRBButton.Position = [19 2 49 22];
 
             % Create DmmEditFieldLabel
-            app.DmmEditFieldLabel = uilabel(app.SENNGhentUParametersButtonGroup);
+            app.DmmEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
             app.DmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.DmmEditFieldLabel.Position = [131 83 55 22];
+            app.DmmEditFieldLabel.Position = [141 83 55 22];
             app.DmmEditFieldLabel.Text = 'D (mm)';
 
             % Create DmmEditField
-            app.DmmEditField = uieditfield(app.SENNGhentUParametersButtonGroup, 'numeric');
-            app.DmmEditField.Position = [201 83 69 20];
+            app.DmmEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
+            app.DmmEditField.Position = [211 83 69 20];
             app.DmmEditField.Value = 0.02;
 
             % Create LmmEditFieldLabel
-            app.LmmEditFieldLabel = uilabel(app.SENNGhentUParametersButtonGroup);
+            app.LmmEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
             app.LmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.LmmEditFieldLabel.Position = [130 52 55 22];
+            app.LmmEditFieldLabel.Position = [140 52 55 22];
             app.LmmEditFieldLabel.Text = 'L (mm)';
 
             % Create LmmEditField
-            app.LmmEditField = uieditfield(app.SENNGhentUParametersButtonGroup, 'numeric');
-            app.LmmEditField.Position = [200 52 69 20];
+            app.LmmEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
+            app.LmmEditField.Position = [210 52 69 20];
             app.LmmEditField.Value = 20.5;
 
             % Create ReillysValuesButton
-            app.ReillysValuesButton = uibutton(app.SENNGhentUParametersButtonGroup, 'push');
+            app.ReillysValuesButton = uibutton(app.SENNParametersButtonGroup, 'push');
             app.ReillysValuesButton.ButtonPushedFcn = createCallbackFcn(app, @ReillysValuesButtonPushed, true);
-            app.ReillysValuesButton.Position = [158 129 100 22];
+            app.ReillysValuesButton.Position = [100 9 100 22];
             app.ReillysValuesButton.Text = 'Reilly''s Values';
 
             % Create CalculateGSENNButton
@@ -925,42 +925,42 @@
             app.Image4.Position = [395 34 314 84];
             app.Image4.ImageSource = 'waves_v5.svg';
 
-            % Create SolveroptionsButtonGroup
-            app.SolveroptionsButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.SolveroptionsButtonGroup.TitlePosition = 'centertop';
-            app.SolveroptionsButtonGroup.Title = 'Solver options';
-            app.SolveroptionsButtonGroup.Position = [1193 34 190 204];
+            % Create SolveroptionsGhentUButtonGroup
+            app.SolveroptionsGhentUButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.SolveroptionsGhentUButtonGroup.TitlePosition = 'centertop';
+            app.SolveroptionsGhentUButtonGroup.Title = 'Solver options (Ghent U.)';
+            app.SolveroptionsGhentUButtonGroup.Position = [1193 34 190 204];
 
             % Create MaxstepusEditFieldLabel
-            app.MaxstepusEditFieldLabel = uilabel(app.SolveroptionsButtonGroup);
+            app.MaxstepusEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.MaxstepusEditFieldLabel.HorizontalAlignment = 'right';
             app.MaxstepusEditFieldLabel.Position = [14 147 82 22];
             app.MaxstepusEditFieldLabel.Text = 'Max. step (us)';
 
             % Create MaxstepusEditField
-            app.MaxstepusEditField = uieditfield(app.SolveroptionsButtonGroup, 'numeric');
+            app.MaxstepusEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
             app.MaxstepusEditField.Position = [111 147 69 20];
             app.MaxstepusEditField.Value = 25;
 
             % Create SamplingperiodEditFieldLabel
-            app.SamplingperiodEditFieldLabel = uilabel(app.SolveroptionsButtonGroup);
+            app.SamplingperiodEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.SamplingperiodEditFieldLabel.HorizontalAlignment = 'right';
             app.SamplingperiodEditFieldLabel.Position = [4 117 92 22];
             app.SamplingperiodEditFieldLabel.Text = 'Sampling/period';
 
             % Create SamplingperiodEditField
-            app.SamplingperiodEditField = uieditfield(app.SolveroptionsButtonGroup, 'numeric');
+            app.SamplingperiodEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
             app.SamplingperiodEditField.Position = [111 117 69 20];
             app.SamplingperiodEditField.Value = 40;
 
             % Create OrderofsolutionEditFieldLabel
-            app.OrderofsolutionEditFieldLabel = uilabel(app.SolveroptionsButtonGroup);
+            app.OrderofsolutionEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.OrderofsolutionEditFieldLabel.HorizontalAlignment = 'right';
             app.OrderofsolutionEditFieldLabel.Position = [2 86 94 22];
             app.OrderofsolutionEditFieldLabel.Text = 'Order of solution';
 
             % Create OrderofsolutionEditField
-            app.OrderofsolutionEditField = uieditfield(app.SolveroptionsButtonGroup, 'numeric');
+            app.OrderofsolutionEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
             app.OrderofsolutionEditField.Position = [111 86 69 20];
             app.OrderofsolutionEditField.Value = 1;
 
@@ -1032,7 +1032,7 @@
             app.Menu2.Text = 'Menu2';
             
             % Assign app.ContextMenu
-            app.MembraneButtonGroup.ContextMenu = app.ContextMenu;
+            app.MembraneGhentUButtonGroup.ContextMenu = app.ContextMenu;
 
             % Show the figure after all components are created
             app.EvaluationofNonSinusoidalMagneticFieldsUIFigure.Visible = 'on';

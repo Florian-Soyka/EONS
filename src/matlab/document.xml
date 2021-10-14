@@ -662,6 +662,21 @@
             drawnow;
             figure(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure)
         end
+
+        % Value changed function: FrequencyHzEditField
+        function FrequencyHzEditFieldValueChanged(app, event)
+            app.UseWaveformButtonPushed();
+        end
+
+        % Value changed function: AmplitudeVmEditField
+        function AmplitudeVmEditFieldValueChanged(app, event)
+            app.UseWaveformButtonPushed();            
+        end
+
+        % Value changed function: DurationmsEditField
+        function DurationmsEditFieldValueChanged(app, event)
+            app.UseWaveformButtonPushed();            
+        end
     end
 
     % Component initialization
@@ -994,6 +1009,7 @@
             % Create FrequencyHzEditField
             app.FrequencyHzEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
             app.FrequencyHzEditField.Limits = [0 Inf];
+            app.FrequencyHzEditField.ValueChangedFcn = createCallbackFcn(app, @FrequencyHzEditFieldValueChanged, true);
             app.FrequencyHzEditField.Position = [117 69 53 22];
             app.FrequencyHzEditField.Value = 50;
 
@@ -1005,6 +1021,7 @@
 
             % Create AmplitudeVmEditField
             app.AmplitudeVmEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
+            app.AmplitudeVmEditField.ValueChangedFcn = createCallbackFcn(app, @AmplitudeVmEditFieldValueChanged, true);
             app.AmplitudeVmEditField.Position = [117 42 53 22];
             app.AmplitudeVmEditField.Value = 1;
 
@@ -1017,6 +1034,7 @@
             % Create DurationmsEditField
             app.DurationmsEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
             app.DurationmsEditField.Limits = [0 Inf];
+            app.DurationmsEditField.ValueChangedFcn = createCallbackFcn(app, @DurationmsEditFieldValueChanged, true);
             app.DurationmsEditField.Position = [117 13 53 22];
             app.DurationmsEditField.Value = 100;
 

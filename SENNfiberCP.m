@@ -261,7 +261,7 @@ Conditions = [0, 4;                  % Conditions for neuron propagation:
                   ];            % F.i. Conditions = [1, 5]: the activation signal is propagating, if it
                                % propagates over 1 active compartment in the forward direction, and 5 compartments in the
                                 % backward direction.
-Conditions = [3, 3];           % Soyka: does that correspond to Reilly's criterium? What are the other rows for?
+Conditions = [0,2; 2,0; 1,1];  % Soyka: that should correspond to Reilly's criterium for 3 consecutive nodes
 fExact = [];                   % Frequencies for which an exact estimation is made of the MSOAf and MSOAb (Hz).
 
 % 3. Neuronal model 

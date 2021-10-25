@@ -3,6 +3,7 @@
     % Properties that correspond to app components
     properties (Access = public)
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
+        RunBatchButton                  matlab.ui.control.Button
         PredefinedWaveformPanel         matlab.ui.container.Panel
         DurationmsEditField             matlab.ui.control.NumericEditField
         DurationmsEditFieldLabel        matlab.ui.control.Label
@@ -677,6 +678,95 @@
         function DurationmsEditFieldValueChanged(app, event)
             app.UseWaveformButtonPushed();            
         end
+
+        % Button pushed function: RunBatchButton
+        function RunBatchButtonPushed(app, event)
+            %run a batch process for Ghent U. simulations - R-SENN needs user input so it cannot be batch processed properly
+            %start by defining a batch vector here. Later this can be read from a file
+            %set parameters, run G-SENN, save intermediate results, iterate
+            
+            %parameters: model (1-5, HH - SRB), D (mm), L (mm), max_step (us), order of solution, type (1=sine, 2=pulse), frequency, duration
+            %use test batch vector:
+            %batch = [1 0.02 20.5 25 1 1 200 50; 2 0.02 20.5 25 1 1 500 50;];
+            
+            %read batch vector from file
+            [file, path] = uigetfile('*.txt');
+            if ~isequal(file,0)
+                file_data = readmatrix(fullfile(path,file));
+                %check file formatting for consistency and stop in case of error
+                if size(file_data,2) ~= 8
+                    uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Batch file seems to have wrong formatting. It needs 8 columns.','Error');
+                    return;
+                end
+                batch = file_data;
+            else
+                return;
+            end
+            
+            %initialize empty results vector
+            results = [];
+            filename = ['results ' datestr(now,'dd.mm.yyyy HH_MM_SS') '.mat'];
+            %iterate batch vector
+            for ii = 1:size(batch,1)
+                %append current conditions and mark result as invalid (-1) so far               
+                results = [results; batch(ii,:) -1];
+                %save intermediate results
+                save(filename, "results");
+                %set model
+                app.HHButton.Value = 0;
+                app.FHButton.Value = 0;
+                app.CRRSSButton.Value = 0;
+                app.SEButton.Value = 0;
+                app.SRBButton.Value = 0;
+                switch batch(ii,1)
+                    case 1
+                        app.HHButton.Value = 1;
+                    case 2
+                        app.FHButton.Value = 1;
+                    case 3
+                        app.CRRSSButton.Value = 1;
+                    case 4
+                        app.SEButton.Value = 1;
+                    case 5
+                        app.SRBButton.Value = 1;
+                    otherwise
+                        %choose FH and continue to next loop iteration
+                        app.FHButton.Value = 1;
+                        continue;
+                end
+                %set D & L
+                app.DmmEditField.Value = batch(ii,2);
+                app.LmmEditField.Value = batch(ii,3);
+                %set max_step and order of solution
+                app.MaxstepusEditField.Value = batch(ii,4);
+                app.OrderofsolutionEditField.Value = batch(ii,5);
+                %set waveform type
+                switch batch(ii,6)
+                    case 1
+                        app.PulseButton.Value = 0;
+                        app.SineButton.Value = 1;
+                    case 2
+                        app.PulseButton.Value = 1;
+                        app.SineButton.Value = 0;
+                    otherwise
+                        %choose sine and continue to next loop iteration
+                        app.PulseButton.Value = 0;
+                        app.SineButton.Value = 1;
+                        continue;
+                end
+                %set frequency and duration
+                app.FrequencyHzEditField.Value = batch(ii,7);
+                app.DurationmsEditField.Value = batch(ii,8);
+                %"push" UseWaveformButton
+                app.UseWaveformButtonPushed();
+                %run G-SENN
+                app.RunSENN_GhentU(); 
+                %put results in vector
+                results(end) = str2double(app.ResultsUITable.Data{3,2});
+            end
+            %save final results
+            save(filename, "results");
+        end
     end
 
     % Component initialization
@@ -735,7 +825,7 @@
             % Create HelpAboutButton
             app.HelpAboutButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.HelpAboutButton.ButtonPushedFcn = createCallbackFcn(app, @HelpAboutButtonPushed, true);
-            app.HelpAboutButton.Position = [1420 263 100 22];
+            app.HelpAboutButton.Position = [1481 263 100 22];
             app.HelpAboutButton.Text = 'Help / About';
 
             % Create TMinEditFieldLabel
@@ -910,13 +1000,13 @@
             % Create CalculateGSENNButton
             app.CalculateGSENNButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.CalculateGSENNButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateGSENNButtonPushed, true);
-            app.CalculateGSENNButton.Position = [1197 263 108 22];
+            app.CalculateGSENNButton.Position = [1192 263 108 22];
             app.CalculateGSENNButton.Text = 'SENN (Ghent U.)';
 
             % Create ScreenshotButton
             app.ScreenshotButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
             app.ScreenshotButton.ButtonPushedFcn = createCallbackFcn(app, @ScreenshotButtonPushed, true);
-            app.ScreenshotButton.Position = [1312 263 94 22];
+            app.ScreenshotButton.Position = [1392 263 82 22];
             app.ScreenshotButton.Text = 'Screenshot';
 
             % Create UseWaveformButton
@@ -1037,6 +1127,12 @@
             app.DurationmsEditField.ValueChangedFcn = createCallbackFcn(app, @DurationmsEditFieldValueChanged, true);
             app.DurationmsEditField.Position = [117 13 53 22];
             app.DurationmsEditField.Value = 100;
+
+            % Create RunBatchButton
+            app.RunBatchButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
+            app.RunBatchButton.ButtonPushedFcn = createCallbackFcn(app, @RunBatchButtonPushed, true);
+            app.RunBatchButton.Position = [1305 263 79 22];
+            app.RunBatchButton.Text = 'Run Batch';
 
             % Create ContextMenu
             app.ContextMenu = uicontextmenu(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);

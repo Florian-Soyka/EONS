@@ -15,6 +15,12 @@
         PulseButton                     matlab.ui.control.ToggleButton
         SineButton                      matlab.ui.control.ToggleButton
         SolveroptionsGhentUButtonGroup  matlab.ui.container.ButtonGroup
+        UpperlimitVmEditField           matlab.ui.control.NumericEditField
+        UpperlimitVmEditFieldLabel      matlab.ui.control.Label
+        LowerlimitVmEditField           matlab.ui.control.NumericEditField
+        LowerlimitVmEditFieldLabel      matlab.ui.control.Label
+        EappVmEditField                 matlab.ui.control.NumericEditField
+        EappVmEditFieldLabel            matlab.ui.control.Label
         OrderofsolutionEditField        matlab.ui.control.NumericEditField
         OrderofsolutionEditFieldLabel   matlab.ui.control.Label
         SamplingperiodEditField         matlab.ui.control.NumericEditField
@@ -382,32 +388,39 @@
             SamplingPeriod = app.SamplingperiodEditField.Value;
             SolverMaxStep = app.MaxstepusEditField.Value;
 
+            % Applied external field (set to zero to perform titration sweep)
+            Eapp = 5.6*1000*(app.EappVmEditField.Value);   % mV/m applied E-field 
+            % The EappVmEditField contains the E-field (V/m) with safety factor 5.6 
+            SweepActI = ~Eapp; Ibegin = 5.6*1000*(app.LowerlimitVmEditField.Value); Iend = 5.6*1000*(app.UpperlimitVmEditField.Value);
+            SearchMode = (Ibegin||Iend);
 
             % Fixed pars
-            conf = 0; Tp = duration; x = 0; y = 0; z = 0; Ibegin = 0; Iend = 0; SearchMode = 0;
-            SweepActI = 1; ElecInj = 0; ancat = 1; monbi = 1;
+            conf = 0; Tp = duration; x = 0; y = 0; z = 0; 
+            ancat = 1; monbi = 1;
 
             app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Running - Please wait'];
             drawnow;
             % run SENN
             SENNfiberCP(num2str(Diamet),num2str(Ltot),num2str(x),num2str(y),num2str(z),num2str(Tp),...
                 num2str(ancat),num2str(monbi),num2str(Ibegin),num2str(Iend),num2str(SearchMode),...
-                num2str(SweepActI),num2str(ElecInj),num2str(model),num2str(conf),...
+                num2str(SweepActI),num2str(Eapp),num2str(model),num2str(conf),...
                 'nofilename',num2str(0),app.Derivative,num2str(SolverMaxStep),num2str(OrderOfSolution),num2str(SamplingPeriod));
             app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished'];
             drawnow;
-
+            
+            if SweepActI
             %/5.6 due to the safety factor   /1000 for mV/m -> V/m
             loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
                 num2str(Tp,5) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
             Threshold = load(loadName);
             threshold =  0.001*Threshold.SweepAct/5.6;
-            delete(loadName);
+            delete(loadName)
 
             %display results in table
             EI_upper = ceil(amplitude/threshold*100);
             app.ResultsUITable.Data{3,1} = [num2str(EI_upper) ' %'];
             app.ResultsUITable.Data{3,2} = [num2str(threshold,'%.4g')];
+            end
         end
     end
 
@@ -685,7 +698,8 @@
             %start by defining a batch vector here. Later this can be read from a file
             %set parameters, run G-SENN, save intermediate results, iterate
             
-            %parameters: model (1-5, HH - SRB), D (mm), L (mm), max_step (us), order of solution, type (1=sine, 2=pulse), frequency, duration
+            %parameters: model (1-5, HH - SRB), D (mm), L (mm), max_step
+            %(us), order of solution, type (1=sine, 2=pulse), frequency (Hz), duration (ms)
             %use test batch vector:
             %batch = [1 0.02 20.5 25 1 1 200 50; 2 0.02 20.5 25 1 1 500 50;];
             
@@ -1039,35 +1053,65 @@
             % Create MaxstepusEditFieldLabel
             app.MaxstepusEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.MaxstepusEditFieldLabel.HorizontalAlignment = 'right';
-            app.MaxstepusEditFieldLabel.Position = [14 147 82 22];
+            app.MaxstepusEditFieldLabel.Position = [14 154 82 22];
             app.MaxstepusEditFieldLabel.Text = 'Max. step (us)';
 
             % Create MaxstepusEditField
             app.MaxstepusEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.MaxstepusEditField.Position = [111 147 69 20];
+            app.MaxstepusEditField.Position = [111 154 69 20];
             app.MaxstepusEditField.Value = 25;
 
             % Create SamplingperiodEditFieldLabel
             app.SamplingperiodEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.SamplingperiodEditFieldLabel.HorizontalAlignment = 'right';
-            app.SamplingperiodEditFieldLabel.Position = [4 117 92 22];
+            app.SamplingperiodEditFieldLabel.Position = [4 123 92 22];
             app.SamplingperiodEditFieldLabel.Text = 'Sampling/period';
 
             % Create SamplingperiodEditField
             app.SamplingperiodEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.SamplingperiodEditField.Position = [111 117 69 20];
+            app.SamplingperiodEditField.Position = [111 123 69 20];
             app.SamplingperiodEditField.Value = 40;
 
             % Create OrderofsolutionEditFieldLabel
             app.OrderofsolutionEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.OrderofsolutionEditFieldLabel.HorizontalAlignment = 'right';
-            app.OrderofsolutionEditFieldLabel.Position = [2 86 94 22];
+            app.OrderofsolutionEditFieldLabel.Position = [2 92 94 22];
             app.OrderofsolutionEditFieldLabel.Text = 'Order of solution';
 
             % Create OrderofsolutionEditField
             app.OrderofsolutionEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.OrderofsolutionEditField.Position = [111 86 69 20];
+            app.OrderofsolutionEditField.Position = [111 92 69 20];
             app.OrderofsolutionEditField.Value = 1;
+
+            % Create EappVmEditFieldLabel
+            app.EappVmEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
+            app.EappVmEditFieldLabel.HorizontalAlignment = 'right';
+            app.EappVmEditFieldLabel.Position = [19 6 66 22];
+            app.EappVmEditFieldLabel.Text = 'Eapp (V/m)';
+
+            % Create EappVmEditField
+            app.EappVmEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
+            app.EappVmEditField.Position = [92 6 69 20];
+
+            % Create LowerlimitVmEditFieldLabel
+            app.LowerlimitVmEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
+            app.LowerlimitVmEditFieldLabel.HorizontalAlignment = 'right';
+            app.LowerlimitVmEditFieldLabel.Position = [2 63 95 22];
+            app.LowerlimitVmEditFieldLabel.Text = 'Lower limit (V/m)';
+
+            % Create LowerlimitVmEditField
+            app.LowerlimitVmEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
+            app.LowerlimitVmEditField.Position = [110 63 69 20];
+
+            % Create UpperlimitVmEditFieldLabel
+            app.UpperlimitVmEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
+            app.UpperlimitVmEditFieldLabel.HorizontalAlignment = 'right';
+            app.UpperlimitVmEditFieldLabel.Position = [1 34 95 22];
+            app.UpperlimitVmEditFieldLabel.Text = 'Upper limit (V/m)';
+
+            % Create UpperlimitVmEditField
+            app.UpperlimitVmEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
+            app.UpperlimitVmEditField.Position = [109 34 69 20];
 
             % Create PredefinedWaveformPanel
             app.PredefinedWaveformPanel = uipanel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);

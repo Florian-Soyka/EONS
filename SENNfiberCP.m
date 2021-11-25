@@ -80,7 +80,7 @@ else
 N = ceil((L./0.10));         % Number of segments vector -> We use 1 segments per 0.5 mm length of compartment
 N(N>10) = 10;                   % Maximum 10 segments per compartment, otherwise calculating time is high
 end
-T = 3;                        % Simulation time (ms)
+T = 1000*LLTp;                        % Simulation time (ms)
 
 d = dinner*ones(C,1); % Diameter vector (mm)
 Ra = 1.1*ones(C,1);                % Axial resistivity vector (Ohm*m), Reilly SENN
@@ -148,9 +148,9 @@ dt=min(1e-6*SolverMaxStep,SamplingPeriod/sinus_freq);
 % 2. Plots and processing
 SweepActI = LLSweepActI;                  % if 1 the code will sweep for the minimal activation current -> furthermore other options (plots, ...) will be ignored
 % 2.1. General plots
-Plotf = 0;                      % if 1 the activating function f (Rattay) is calculated and plotted
-VtotPlot = 0;                   % if 1 all membrane-voltage data is stored and plotted
-mtotPlot = 0;                   % if 1 all m-gate data is stored and plotted
+Plotf = 1;                      % if 1 the activating function f (Rattay) is calculated and plotted
+VtotPlot = 1;                   % if 1 all membrane-voltage data is stored and plotted
+mtotPlot = 1;                   % if 1 all m-gate data is stored and plotted
 ntotPlot = 0;                   % if 1 all n-gate data is stored and plotted
 htotPlot = 0;                   % if 1 all h-gate data is stored and plotted
 ptotPlot = 0;                   % if 1 all p-gate data is stored and plotted
@@ -906,6 +906,10 @@ Np = ceil(Tp/dt-1/2);              % Np*dt+dt/2 = Tp
 Ve(:,Np:end) = 0;
 end
     end
+end
+if EONS
+Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(EONSWaveform(:,2)),(0:dt:Nt*dt),'linear',0);
+Ve = -(-1)^(Iancat-1).*Ielec.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
 end
 end
 else 			% SweepActI = 1

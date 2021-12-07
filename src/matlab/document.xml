@@ -641,7 +641,7 @@
             if (app.PulseButton.Value == 1)
                 %pulse
                 waveform = zeros(length(time),1);
-                index = find(time > (1/frequency),1) - 1;
+                index = find(time > (1/(2*frequency)),1) - 1;
                 waveform(1:index) = ones(index,1);
                 waveform = waveform .* amplitude;
             else

@@ -699,17 +699,18 @@
             %set parameters, run G-SENN, save intermediate results, iterate
             
             %parameters: model (1-5, HH - SRB), D (mm), L (mm), max_step
-            %(us), order of solution, type (1=sine, 2=pulse), frequency (Hz), duration (ms)
+            %(us), order of solution, type (1=sine, 2=pulse), frequency
+            %(Hz), duration (ms), lower limit (V/m), upper limit (V/m)
             %use test batch vector:
-            %batch = [1 0.02 20.5 25 1 1 200 50; 2 0.02 20.5 25 1 1 500 50;];
+            %batch = [1 0.02 20.5 25 1 1 200 50; 2 0.02 20.5 25 1 1 500 50 0 0;];
             
             %read batch vector from file
             [file, path] = uigetfile('*.txt');
             if ~isequal(file,0)
                 file_data = readmatrix(fullfile(path,file));
                 %check file formatting for consistency and stop in case of error
-                if size(file_data,2) ~= 8
-                    uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Batch file seems to have wrong formatting. It needs 8 columns.','Error');
+                if size(file_data,2) ~= 10
+                    uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Batch file seems to have wrong formatting. It needs 10 columns.','Error');
                     return;
                 end
                 batch = file_data;
@@ -771,6 +772,9 @@
                 %set frequency and duration
                 app.FrequencyHzEditField.Value = batch(ii,7);
                 app.DurationmsEditField.Value = batch(ii,8);
+                %set lower / upper limit
+                app.LowerlimitVmEditField.Value = batch(ii,9);
+                app.UpperlimitVmEditField.Value = batch(ii,10);
                 %"push" UseWaveformButton
                 app.UseWaveformButtonPushed();
                 %run G-SENN

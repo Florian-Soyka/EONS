@@ -908,7 +908,7 @@ end
     end
 end
 if EONS
-Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(EONSWaveform(:,2)),(0:dt:Nt*dt),'linear',0);
+Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(abs(EONSWaveform(:,2))),(0:dt:Nt*dt),'linear',0);
 Ve = -(-1)^(Iancat-1).*Ielec.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
 end
 end
@@ -947,7 +947,7 @@ Ve(:,2*Nps-1:end) = 0;
 end
     end
     else % EONS 
-Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(EONSWaveform(:,2)),(0:dt:Nt*dt),'linear',0);
+Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(abs(EONSWaveform(:,2))),(0:dt:Nt*dt),'linear',0);
 Ve = -(-1)^(Iancat-1).*IIelecs.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
     end
 end

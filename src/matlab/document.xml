@@ -5,6 +5,8 @@
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
         RunBatchButton                  matlab.ui.control.Button
         PredefinedWaveformPanel         matlab.ui.container.Panel
+        PhaseEditField                  matlab.ui.control.NumericEditField
+        PhaseEditFieldLabel             matlab.ui.control.Label
         DurationmsEditField             matlab.ui.control.NumericEditField
         DurationmsEditFieldLabel        matlab.ui.control.Label
         AmplitudeVmEditField            matlab.ui.control.NumericEditField
@@ -111,6 +113,7 @@
                 amplitude = max(abs(app.Derivative(:,2)));
                 legend(app.DerivativeUIAxes,['Derivative with Amplitude: ' num2str(amplitude,'%.4g') ' V/m']);
                 axis(app.DerivativeUIAxes,'auto');
+                ylim(app.DerivativeUIAxes,[-1.2*amplitude 1.2*amplitude])
             end
         end
 
@@ -633,6 +636,9 @@
 
             %Amplitude for the E field
             amplitude = app.AmplitudeVmEditField.Value;
+            
+            %Phase for the E field
+            phase = app.PhaseEditField.Value;
 
             %calculate time vector
             time = [0:dt:duration]';
@@ -642,11 +648,23 @@
                 %pulse
                 waveform = zeros(length(time),1);
                 index = find(time > (1/(2*frequency)),1) - 1;
-                waveform(1:index) = ones(index,1);
-                waveform = waveform .* amplitude;
+                if(isempty(index))
+                    index = length(time);
+                end
+                %caculate the start index based on the phase settings
+                startindex = find(time >= phase/360 * duration,1);
+                
+                if(~isempty(startindex)) %otherwise we're done
+                    endindex = startindex + index -1;
+                    if( endindex > length(time))
+                        endindex = length(time);
+                    end
+                    waveform(startindex:endindex) = ones(endindex-startindex+1,1);
+                    waveform = waveform .* amplitude;                   
+                end
             else
                 %sine
-                waveform = amplitude .* sin(2*pi*frequency*time);
+                waveform = amplitude .* sin(2*pi*frequency*time + phase/360*2*pi);
             end
 
 
@@ -784,6 +802,16 @@
             end
             %save final results
             save(filename, "results");
+        end
+
+        % Value changed function: PhaseEditField
+        function PhaseEditFieldValueChanged(app, event)
+            app.UseWaveformButtonPushed();             
+        end
+
+        % Selection changed function: TypeButtonGroup
+        function TypeButtonGroupSelectionChanged(app, event)
+            app.UseWaveformButtonPushed();  
         end
     end
 
@@ -954,12 +982,12 @@
             app.SENNParametersButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.SENNParametersButtonGroup.TitlePosition = 'centertop';
             app.SENNParametersButtonGroup.Title = 'SENN Parameters';
-            app.SENNParametersButtonGroup.Position = [881 34 293 204];
+            app.SENNParametersButtonGroup.Position = [881 17 293 221];
 
             % Create MembraneGhentUButtonGroup
             app.MembraneGhentUButtonGroup = uibuttongroup(app.SENNParametersButtonGroup);
             app.MembraneGhentUButtonGroup.Title = 'Membrane (Ghent U.)';
-            app.MembraneGhentUButtonGroup.Position = [11 40 129 136];
+            app.MembraneGhentUButtonGroup.Position = [11 57 129 136];
 
             % Create HHButton
             app.HHButton = uitogglebutton(app.MembraneGhentUButtonGroup);
@@ -990,29 +1018,29 @@
             % Create DmmEditFieldLabel
             app.DmmEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
             app.DmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.DmmEditFieldLabel.Position = [141 83 55 22];
+            app.DmmEditFieldLabel.Position = [141 100 55 22];
             app.DmmEditFieldLabel.Text = 'D (mm)';
 
             % Create DmmEditField
             app.DmmEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
-            app.DmmEditField.Position = [211 83 69 20];
+            app.DmmEditField.Position = [211 100 69 20];
             app.DmmEditField.Value = 0.02;
 
             % Create LmmEditFieldLabel
             app.LmmEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
             app.LmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.LmmEditFieldLabel.Position = [140 52 55 22];
+            app.LmmEditFieldLabel.Position = [140 69 55 22];
             app.LmmEditFieldLabel.Text = 'L (mm)';
 
             % Create LmmEditField
             app.LmmEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
-            app.LmmEditField.Position = [210 52 69 20];
+            app.LmmEditField.Position = [210 69 69 20];
             app.LmmEditField.Value = 20.5;
 
             % Create ReillysValuesButton
             app.ReillysValuesButton = uibutton(app.SENNParametersButtonGroup, 'push');
             app.ReillysValuesButton.ButtonPushedFcn = createCallbackFcn(app, @ReillysValuesButtonPushed, true);
-            app.ReillysValuesButton.Position = [100 9 100 22];
+            app.ReillysValuesButton.Position = [100 26 100 22];
             app.ReillysValuesButton.Text = 'Reilly''s Values';
 
             % Create CalculateGSENNButton
@@ -1052,80 +1080,81 @@
             app.SolveroptionsGhentUButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.SolveroptionsGhentUButtonGroup.TitlePosition = 'centertop';
             app.SolveroptionsGhentUButtonGroup.Title = 'Solver options (Ghent U.)';
-            app.SolveroptionsGhentUButtonGroup.Position = [1193 34 190 204];
+            app.SolveroptionsGhentUButtonGroup.Position = [1193 17 190 221];
 
             % Create MaxstepusEditFieldLabel
             app.MaxstepusEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.MaxstepusEditFieldLabel.HorizontalAlignment = 'right';
-            app.MaxstepusEditFieldLabel.Position = [14 154 82 22];
+            app.MaxstepusEditFieldLabel.Position = [14 171 82 22];
             app.MaxstepusEditFieldLabel.Text = 'Max. step (us)';
 
             % Create MaxstepusEditField
             app.MaxstepusEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.MaxstepusEditField.Position = [111 154 69 20];
+            app.MaxstepusEditField.Position = [111 171 69 20];
             app.MaxstepusEditField.Value = 25;
 
             % Create SamplingperiodEditFieldLabel
             app.SamplingperiodEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.SamplingperiodEditFieldLabel.HorizontalAlignment = 'right';
-            app.SamplingperiodEditFieldLabel.Position = [4 123 92 22];
+            app.SamplingperiodEditFieldLabel.Position = [4 140 92 22];
             app.SamplingperiodEditFieldLabel.Text = 'Sampling/period';
 
             % Create SamplingperiodEditField
             app.SamplingperiodEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.SamplingperiodEditField.Position = [111 123 69 20];
+            app.SamplingperiodEditField.Position = [111 140 69 20];
             app.SamplingperiodEditField.Value = 40;
 
             % Create OrderofsolutionEditFieldLabel
             app.OrderofsolutionEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.OrderofsolutionEditFieldLabel.HorizontalAlignment = 'right';
-            app.OrderofsolutionEditFieldLabel.Position = [2 92 94 22];
+            app.OrderofsolutionEditFieldLabel.Position = [2 109 94 22];
             app.OrderofsolutionEditFieldLabel.Text = 'Order of solution';
 
             % Create OrderofsolutionEditField
             app.OrderofsolutionEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.OrderofsolutionEditField.Position = [111 92 69 20];
+            app.OrderofsolutionEditField.Position = [111 109 69 20];
             app.OrderofsolutionEditField.Value = 1;
 
             % Create EappVmEditFieldLabel
             app.EappVmEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.EappVmEditFieldLabel.HorizontalAlignment = 'right';
-            app.EappVmEditFieldLabel.Position = [19 6 66 22];
+            app.EappVmEditFieldLabel.Position = [19 23 66 22];
             app.EappVmEditFieldLabel.Text = 'Eapp (V/m)';
 
             % Create EappVmEditField
             app.EappVmEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.EappVmEditField.Position = [92 6 69 20];
+            app.EappVmEditField.Position = [92 23 69 20];
 
             % Create LowerlimitVmEditFieldLabel
             app.LowerlimitVmEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.LowerlimitVmEditFieldLabel.HorizontalAlignment = 'right';
-            app.LowerlimitVmEditFieldLabel.Position = [2 63 95 22];
+            app.LowerlimitVmEditFieldLabel.Position = [2 80 95 22];
             app.LowerlimitVmEditFieldLabel.Text = 'Lower limit (V/m)';
 
             % Create LowerlimitVmEditField
             app.LowerlimitVmEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.LowerlimitVmEditField.Position = [110 63 69 20];
+            app.LowerlimitVmEditField.Position = [110 80 69 20];
 
             % Create UpperlimitVmEditFieldLabel
             app.UpperlimitVmEditFieldLabel = uilabel(app.SolveroptionsGhentUButtonGroup);
             app.UpperlimitVmEditFieldLabel.HorizontalAlignment = 'right';
-            app.UpperlimitVmEditFieldLabel.Position = [1 34 95 22];
+            app.UpperlimitVmEditFieldLabel.Position = [1 51 95 22];
             app.UpperlimitVmEditFieldLabel.Text = 'Upper limit (V/m)';
 
             % Create UpperlimitVmEditField
             app.UpperlimitVmEditField = uieditfield(app.SolveroptionsGhentUButtonGroup, 'numeric');
-            app.UpperlimitVmEditField.Position = [109 34 69 20];
+            app.UpperlimitVmEditField.Position = [109 51 69 20];
 
             % Create PredefinedWaveformPanel
             app.PredefinedWaveformPanel = uipanel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.PredefinedWaveformPanel.Title = 'Predefined Waveform';
-            app.PredefinedWaveformPanel.Position = [1399 34 180 204];
+            app.PredefinedWaveformPanel.Position = [1399 17 180 221];
 
             % Create TypeButtonGroup
             app.TypeButtonGroup = uibuttongroup(app.PredefinedWaveformPanel);
+            app.TypeButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @TypeButtonGroupSelectionChanged, true);
             app.TypeButtonGroup.Title = 'Type';
-            app.TypeButtonGroup.Position = [8 102 123 78];
+            app.TypeButtonGroup.Position = [8 119 123 78];
 
             % Create SineButton
             app.SineButton = uitogglebutton(app.TypeButtonGroup);
@@ -1141,40 +1170,52 @@
             % Create FrequencyHzEditFieldLabel
             app.FrequencyHzEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
             app.FrequencyHzEditFieldLabel.HorizontalAlignment = 'right';
-            app.FrequencyHzEditFieldLabel.Position = [6 69 94 22];
+            app.FrequencyHzEditFieldLabel.Position = [6 86 94 22];
             app.FrequencyHzEditFieldLabel.Text = 'Frequency (Hz):';
 
             % Create FrequencyHzEditField
             app.FrequencyHzEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
             app.FrequencyHzEditField.Limits = [0 Inf];
             app.FrequencyHzEditField.ValueChangedFcn = createCallbackFcn(app, @FrequencyHzEditFieldValueChanged, true);
-            app.FrequencyHzEditField.Position = [117 69 53 22];
+            app.FrequencyHzEditField.Position = [117 86 53 22];
             app.FrequencyHzEditField.Value = 50;
 
             % Create AmplitudeVmEditField_2Label
             app.AmplitudeVmEditField_2Label = uilabel(app.PredefinedWaveformPanel);
             app.AmplitudeVmEditField_2Label.HorizontalAlignment = 'right';
-            app.AmplitudeVmEditField_2Label.Position = [6 42 94 22];
+            app.AmplitudeVmEditField_2Label.Position = [6 34 94 22];
             app.AmplitudeVmEditField_2Label.Text = 'Amplitude (V/m):';
 
             % Create AmplitudeVmEditField
             app.AmplitudeVmEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
             app.AmplitudeVmEditField.ValueChangedFcn = createCallbackFcn(app, @AmplitudeVmEditFieldValueChanged, true);
-            app.AmplitudeVmEditField.Position = [117 42 53 22];
+            app.AmplitudeVmEditField.Position = [117 34 53 22];
             app.AmplitudeVmEditField.Value = 1;
 
             % Create DurationmsEditFieldLabel
             app.DurationmsEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
             app.DurationmsEditFieldLabel.HorizontalAlignment = 'right';
-            app.DurationmsEditFieldLabel.Position = [6 13 94 22];
+            app.DurationmsEditFieldLabel.Position = [6 5 94 22];
             app.DurationmsEditFieldLabel.Text = 'Duration (ms):';
 
             % Create DurationmsEditField
             app.DurationmsEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
             app.DurationmsEditField.Limits = [0 Inf];
             app.DurationmsEditField.ValueChangedFcn = createCallbackFcn(app, @DurationmsEditFieldValueChanged, true);
-            app.DurationmsEditField.Position = [117 13 53 22];
+            app.DurationmsEditField.Position = [117 5 53 22];
             app.DurationmsEditField.Value = 100;
+
+            % Create PhaseEditFieldLabel
+            app.PhaseEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
+            app.PhaseEditFieldLabel.HorizontalAlignment = 'right';
+            app.PhaseEditFieldLabel.Position = [6 60 94 22];
+            app.PhaseEditFieldLabel.Text = 'Phase (°):';
+
+            % Create PhaseEditField
+            app.PhaseEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
+            app.PhaseEditField.Limits = [0 360];
+            app.PhaseEditField.ValueChangedFcn = createCallbackFcn(app, @PhaseEditFieldValueChanged, true);
+            app.PhaseEditField.Position = [117 60 53 22];
 
             % Create RunBatchButton
             app.RunBatchButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');

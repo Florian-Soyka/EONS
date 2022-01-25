@@ -7,9 +7,8 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  LLSearchMode=str2double(SearchMode);
  LLElecInj = str2double(ElecInj); LLSweepActI = str2double(SweepActI);
  sinus_freq = str2double(sinus_freq);
- if nargin >= 22
+ if nargin >= 27
      error('Too many input arguments');
- elseif nargin == 17
  elseif nargin == 18
  EONSWaveform = varargin{1};
  elseif nargin == 19
@@ -23,8 +22,23 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  EONSWaveform = varargin{1};
  SolverMaxStep = str2double(varargin{2});
  OrderOfSolution = str2double(varargin{3});
- SamplingPeriod = str2double(varargin{4});    
+ SamplingPeriod = str2double(varargin{4});  
+ elseif nargin == 22
+     error('Please also enter nThreshAPs');
+ elseif nargin == 23
+ EONSWaveform = varargin{1}; SolverMaxStep = str2double(varargin{2});
+ OrderOfSolution = str2double(varargin{3}); SamplingPeriod = str2double(varargin{4});
+ llActivationDetectionMode = str2double(varargin{5}); llThreshnAPs = str2double(varargin{6});
+ elseif nargin == 24
+ EONSWaveform = varargin{1}; SolverMaxStep = str2double(varargin{2});
+ OrderOfSolution = str2double(varargin{3}); SamplingPeriod = str2double(varargin{4});
+ llActivationDetectionMode = str2double(varargin{5}); llThreshnAPs = str2double(varargin{6});
+ minAPdur = str2double(varargin{7});
  end
+ if nargin == 25
+     error('Please also include DynTol');
+ end
+ %nargin = 26, DynTol and utol defined in code.
  
 tic;                            % Start stopwatch timer
 Acc = 0;                        % Discretisation accuracy (0 = low, 1 = high)
@@ -97,6 +111,10 @@ c = 100;          % Travelspeed of electric impulses through the neuron (m/s)
 Temp = 22*ones(C,1);        % Temperature (°C), Reilly SENN
 tol = 1e-50;                    % Tolerance used in matlab fsolve (default is 1e-6)
 DynTol = 1e-50;                  % Dynamic tolerance used in Matlab fsolve (if 0, use abs. tol)
+if nargin == 25
+tol = varargin{8};
+DynTol = varargin{9};
+end
 % SI-units (All voltages are in mV)
 L = L.*10^(-3);                 % Length (m)
 T = T.*10^(-3);                 % Simulation time (s)    
@@ -252,6 +270,9 @@ MonBi = LLmonbi;                  % 1 = only monophasic, 2 = only biphasic, 3 = 
 % 2.5. Activated tissue
 NeuronActivation = 1;           % Bool: if 1 check if neuron is activated.
 ActivationTable = 1;            % Bool: if 1 show overview of activation locations and times
+ActivationDetectionMode = llActivationDetectionMode; % If 1: activation detected according to conditions (1 AP), 
+                                                     % If 2: activated if number APs at terminal exceeds ThreshnAPs
+ThreshnAPs = llThreshnAPs;     % Number of APs to be reached at terminal, if ActivationDectectionMode = 2
 TableName = 'CRRSS Cortex';    % The name of the neuron displayed in the activation table
 Vtres = 80;                     % Treshold voltage (mV) for activation. % Soyka: from 50 to 80
 maxc = 10000000;                     % maximum propagation speed (m/s)
@@ -376,7 +397,7 @@ Qbh(Model5l) = 2.9;
 Cmc = (pi.*d.*dx.*Cm).*double(Model~=1)+((AHH/20).*Cm).*double(Model==1);              % Compartmental capacitance vector (F)
 Gac = (pi.*d.^2)./(4.*dx.*Ra);    % Compartmental conductance vector (S)
 
-NeuronActivated = 0;
+NeuronActivated = 0; TerminalActivated = 0;
 NumberSimulations = 0; teller = 0; reverseStr = '';
 
 if x0s(1) == x0s(3)
@@ -1409,6 +1430,7 @@ distf = circshift(xAct,-1,1)-xAct;       % forward distance between active segme
 % higher than Vtres.
 pkscell = cell(AS,1); timescell = cell(AS,1); % pkscell = all peaks (local maxima) at each active segment. timescell = corresponding times
 propf = cell(AS,1); propb = cell(AS,1);     % propf = propagating forward, propb = propagating backward (for later use, see 8.2)
+pksAPdurcell = cell(AS,1); timesAPdurcell = cell(AS,1);  % These cells take into account a minimal AP duration
 for i = 1:AS
 [pks,locs] = findpeaks(Vactive(i,:));   % find peaks and corresponding location numbers of Vactive.
 times = timeflow(locs(pks>Vtres)); pks = pks(pks>Vtres);  % Only peaks > Vtres are local activation peaks. We also determine the associated times.
@@ -1419,6 +1441,28 @@ if isempty(pkscell{AS})
     SynapseActivated = 0;
 end
 
+for i = 1:AS
+    timesAPduri = timescell{i};   % APdur: take into account minimal AP duration (minAPdur)
+    pksAPduri = pkscell{i}; 
+    temptimesAPduri = timesAPduri;
+    if ~isempty(temptimesAPduri)
+    indAPduri = [1]; %#ok<NBRAK>
+    else 
+    indAPduri = [];
+    end
+    while ~isempty(temptimesAPduri)
+    indNextAP = find(diff(temptimesAPduri)>=minAPdur,1)+indAPduri(end);
+    % If indNextAP is empty, it will have no effect on indAPduri
+    % andtimesAPduri will be empty. 
+    indAPduri = horzcat(indAPduri,indNextAP); %#ok<AGROW> 
+    temptimesAPduri = temptimesAPduri(indNextAP:end);
+    end
+    pksAPdurcell{i} = pksAPduri(indAPduri);
+    timesAPdurcell{i} = timesAPduri(indAPduri);    
+end
+
+nTermAPs = max([length(pksAPdurcell{1}) length(pksAPdurcell{AS})]);     % Number of APs at the most active terminal
+TerminalActivated = double(nTermAPs >= ThreshnAPs);              % Terminal activated w.r.t. ThreshnAPs     
 % 8.2. Determine propagation numbers
 
 % We have determined the local activation peaks and times. Now we
@@ -1738,7 +1782,11 @@ end
 end 
 end
 if SweepActI
-Ielecs(NeuronActivated+1) = IIelecs;
+    switch ActivationDetectionMode
+        case 1, SweepActivatedPar = NeuronActivated; 
+        case 2, SweepActivatedPar = TerminalActivated;
+    end
+Ielecs(SweepActivatedPar+1) = IIelecs;
 if SearchMode % SearchMode = 1
 IIelecs = (Ielecs(1)+Ielecs(2))/2;
 PrecisionCheck=((Ielecs(2)-Ielecs(1))<10^(floor(log10(Ielecs(2)))-ElecsPrecision));
@@ -1776,6 +1824,7 @@ end
 SweepActImat(Inx0s,Iny0s,Inz0s,InTps,Iancat,Imb) = IIelecs;
 if SweepActI
 NeuronActivated = 0;
+TerminalActivated = 0;
 end
  if flg, break; end
 end

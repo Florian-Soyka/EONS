@@ -1825,7 +1825,8 @@ if ~SweepActI
 if DISPLAY
 disp('4. Calculating plots');
 end
-t = timeflow;
+t = timeflow; 
+if EONS, t=t+EONSWaveform(1,1); end 
 
 % 9.1. Membrane-voltage
 if reference
@@ -1963,6 +1964,7 @@ if DISPLAY
 disp('4.2. Calculating gate-parameter plots');
 end
 t = timeflow+(dt/2).*ones(1,Nt+1);        % Timeflow of gate parameters is shifted over dt/2
+if EONS, t = t+EONSWaveform(1,1); end
 Tim = t(St);
 
 % 9.2.1. m-parameter

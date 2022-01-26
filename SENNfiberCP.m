@@ -7,38 +7,18 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  LLSearchMode=str2double(SearchMode);
  LLElecInj = str2double(ElecInj); LLSweepActI = str2double(SweepActI);
  sinus_freq = str2double(sinus_freq);
- if nargin >= 27
-     error('Too many input arguments');
- elseif nargin == 18
- EONSWaveform = varargin{1};
- elseif nargin == 19
- EONSWaveform = varargin{1};
- SolverMaxStep = str2double(varargin{2});    
- elseif nargin == 20
- EONSWaveform = varargin{1};
- SolverMaxStep = str2double(varargin{2});
- OrderOfSolution = str2double(varargin{3});    
- elseif nargin == 21
- EONSWaveform = varargin{1};
- SolverMaxStep = str2double(varargin{2});
- OrderOfSolution = str2double(varargin{3});
- SamplingPeriod = str2double(varargin{4});  
- elseif nargin == 22
-     error('Please also enter nThreshAPs');
- elseif nargin == 23
- EONSWaveform = varargin{1}; SolverMaxStep = str2double(varargin{2});
- OrderOfSolution = str2double(varargin{3}); SamplingPeriod = str2double(varargin{4});
- llActivationDetectionMode = str2double(varargin{5}); llThreshnAPs = str2double(varargin{6});
- elseif nargin == 24
- EONSWaveform = varargin{1}; SolverMaxStep = str2double(varargin{2});
- OrderOfSolution = str2double(varargin{3}); SamplingPeriod = str2double(varargin{4});
- llActivationDetectionMode = str2double(varargin{5}); llThreshnAPs = str2double(varargin{6});
- minAPdur = str2double(varargin{7});
+ if nargin >= 27, error('Too many input arguments'); end
+ if nargin >= 18, EONSWaveform = varargin{1}; end
+ if nargin >= 19, SolverMaxStep = str2double(varargin{2}); end   
+ if nargin >= 20, OrderOfSolution = str2double(varargin{3}); end    
+ if nargin >= 21, SamplingPeriod = str2double(varargin{4}); end 
+ if nargin == 22, error('Please also enter nThreshAPs'); end
+ if nargin >= 23
+     llActivationDetectionMode = str2double(varargin{5}); llThreshnAPs = str2double(varargin{6});
  end
- if nargin == 25
-     error('Please also include DynTol');
- end
- %nargin = 26, DynTol and utol defined in code.
+ if nargin >= 24, minAPdur = str2double(varargin{7}); end
+ if nargin == 25, error('Please also include DynTol'); end
+ if nargin >= 26, lltol = varargin{8}; llDynTol = varargin{9}; end  
  
 tic;                            % Start stopwatch timer
 Acc = 0;                        % Discretisation accuracy (0 = low, 1 = high)
@@ -111,9 +91,9 @@ c = 100;          % Travelspeed of electric impulses through the neuron (m/s)
 Temp = 22*ones(C,1);        % Temperature (°C), Reilly SENN
 tol = 1e-50;                    % Tolerance used in matlab fsolve (default is 1e-6)
 DynTol = 1e-50;                  % Dynamic tolerance used in Matlab fsolve (if 0, use abs. tol)
-if nargin == 25
-tol = varargin{8};
-DynTol = varargin{9};
+if nargin >= 26
+tol = lltol;
+DynTol = llDynTol;
 end
 % SI-units (All voltages are in mV)
 L = L.*10^(-3);                 % Length (m)

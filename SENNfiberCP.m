@@ -18,7 +18,7 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  end
  if nargin >= 24, minAPdur = str2double(varargin{7}); end
  if nargin == 25, error('Please also include DynTol'); end
- if nargin >= 26, lltol = varargin{8}; llDynTol = varargin{9}; end  
+ if nargin >= 26, lltol = str2double(varargin{8}); llDynTol = str2double(varargin{9}); end  
  
 tic;                            % Start stopwatch timer
 Acc = 0;                        % Discretisation accuracy (0 = low, 1 = high)
@@ -909,7 +909,7 @@ end
     end
 end
 if EONS
-Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(abs(EONSWaveform(:,2))),(0:dt:Nt*dt),'linear',0);
+Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(abs(EONSWaveform(:,2))),EONSWaveform(1,1)+(0:dt:Nt*dt),'linear',0);
 Ve = -(-1)^(Iancat-1).*Ielec.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
 end
 end
@@ -948,7 +948,7 @@ Ve(:,2*Nps-1:end) = 0;
 end
     end
     else % EONS 
-Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(abs(EONSWaveform(:,2))),(0:dt:Nt*dt),'linear',0);
+Waveform = interp1(EONSWaveform(:,1),EONSWaveform(:,2)./max(abs(EONSWaveform(:,2))),EONSWaveform(1,1)+(0:dt:Nt*dt),'linear',0);
 Ve = -(-1)^(Iancat-1).*IIelecs.*gmultiply((dxI./2+[0; cumsum(dxI(1:end-1))]),Waveform);
     end
 end

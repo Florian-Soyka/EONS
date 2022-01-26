@@ -753,7 +753,7 @@
             if ~isequal(file,0)
                 file_data = readmatrix(fullfile(path,file));
                 %check file formatting for consistency and stop in case of error
-                if size(file_data,2) ~= 10
+                if size(file_data,2) ~= 13
                     uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Batch file seems to have wrong formatting. It needs 10 columns.','Error');
                     return;
                 end

@@ -134,8 +134,11 @@
                 %https://de.mathworks.com/help/signal/ref/bilinear.html
                 num_lower = eval(app.parameters(2));
                 den_lower = eval(app.parameters(3));
-                num_upper = eval(app.parameters(4));
-                den_upper = eval(app.parameters(5));
+                pre_k = eval(app.parameters(4));    % Prefactor (HH,FH,CRRSS,SE,SRB)
+                corner_f = eval(app.parameters(5)); % Corner frequency (HH,FH,CRRSS,SE,SRB)
+                model = find([app.HHButton.Value,app.FHButton.Value,app.CRRSSButton.Value,app.SEButton.Value,app.SRBButton.Value]);
+                num_upper = pre_k(model)*[1/(corner_f(model)*2*pi) 0];
+                den_upper = [1/(corner_f(model)*2*pi) 1];
 
                 %Lower Action Level
                 %Calculate Filter Parameters and apply WPM
@@ -207,8 +210,11 @@
             if(app.parameters(6) == 'true')
                 num_lower = eval(app.parameters(2));
                 den_lower = eval(app.parameters(3));
-                num_upper = eval(app.parameters(4));
-                den_upper = eval(app.parameters(5));
+                pre_k = eval(app.parameters(4));    % Prefactor (HH,FH,CRRSS,SE,SRB)
+                corner_f = eval(app.parameters(5)); % Corner frequency (HH,FH,CRRSS,SE,SRB)
+                model = find([app.HHButton.Value,app.FHButton.Value,app.CRRSSButton.Value,app.SEButton.Value,app.SRBButton.Value]);
+                num_upper = pre_k(model)*[1/(corner_f(model)*2*pi) 0];
+                den_upper = [1/(corner_f(model)*2*pi) 1];
                 s = 1i*frequency*2*pi;
                 %Lower Action Level
                 s_num = [];

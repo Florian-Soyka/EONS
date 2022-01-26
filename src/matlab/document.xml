@@ -737,7 +737,8 @@
             
             %parameters: model (1-5, HH - SRB), D (mm), L (mm), max_step
             %(us), order of solution, type (1=sine, 2=pulse), frequency
-            %(Hz), duration (ms), lower limit (V/m), upper limit (V/m)
+            %(Hz), beat (Hz), duration (ms), lower limit (V/m), upper limit
+            %(V/m), nAPs (-), APdur (s)
             %use test batch vector:
             %batch = [1 0.02 20.5 25 1 1 200 50; 2 0.02 20.5 25 1 1 500 50 0 0;];
             
@@ -808,10 +809,14 @@
                 end
                 %set frequency and duration
                 app.FrequencyHzEditField.Value = batch(ii,7);
-                app.DurationmsEditField.Value = batch(ii,8);
+                app.BeatHzEditField.Value = batch(ii,8);
+                app.DurationmsEditField.Value = batch(ii,9);
                 %set lower / upper limit
-                app.LowerlimitVmEditField.Value = batch(ii,9);
-                app.UpperlimitVmEditField.Value = batch(ii,10);
+                app.LowerlimitVmEditField.Value = batch(ii,10);
+                app.UpperlimitVmEditField.Value = batch(ii,11);
+                % Set nAPs and APdur
+                app.nAPsEditField.Value = batch(ii,12);
+                app.APdursEditField.Value = batch(ii,13);
                 %"push" UseWaveformButton
                 app.UseWaveformButtonPushed();
                 %run G-SENN

@@ -5,8 +5,8 @@
         EvaluationofNonSinusoidalMagneticFieldsUIFigure  matlab.ui.Figure
         RunBatchButton                  matlab.ui.control.Button
         PredefinedWaveformPanel         matlab.ui.container.Panel
-        BeatHzEditField                 matlab.ui.control.NumericEditField
-        BeatHzEditFieldLabel            matlab.ui.control.Label
+        BeatforSineHzEditField          matlab.ui.control.NumericEditField
+        BeatforSineHzLabel              matlab.ui.control.Label
         PhaseEditField                  matlab.ui.control.NumericEditField
         PhaseEditFieldLabel             matlab.ui.control.Label
         DurationmsEditField             matlab.ui.control.NumericEditField
@@ -39,7 +39,7 @@
         UseWaveformButton               matlab.ui.control.Button
         ScreenshotButton                matlab.ui.control.Button
         CalculateGSENNButton            matlab.ui.control.Button
-        SENNParametersButtonGroup       matlab.ui.container.ButtonGroup
+        SENNGhentUWPMParametersButtonGroup  matlab.ui.container.ButtonGroup
         APdursEditField                 matlab.ui.control.NumericEditField
         APdursEditFieldLabel            matlab.ui.control.Label
         nAPsEditField                   matlab.ui.control.NumericEditField
@@ -52,7 +52,7 @@
         LmmEditFieldLabel               matlab.ui.control.Label
         DmmEditField                    matlab.ui.control.NumericEditField
         DmmEditFieldLabel               matlab.ui.control.Label
-        MembraneGhentUButtonGroup       matlab.ui.container.ButtonGroup
+        MembraneModelButtonGroup        matlab.ui.container.ButtonGroup
         SRBButton                       matlab.ui.control.ToggleButton
         SEButton                        matlab.ui.control.ToggleButton
         CRRSSButton                     matlab.ui.control.ToggleButton
@@ -651,7 +651,7 @@
         % Button pushed function: UseWaveformButton
         function UseWaveformButtonPushed(app, event)
             frequency = app.FrequencyHzEditField.Value;
-            beat = app.BeatHzEditField.Value;
+            beat = app.BeatforSineHzEditField.Value;
 
             % make dt frequency dependent, and have a least 50 us.
             dt = min([1/frequency / 100,  0.05e-3]);
@@ -815,7 +815,7 @@
                 end
                 %set frequency and duration
                 app.FrequencyHzEditField.Value = batch(ii,7);
-                app.BeatHzEditField.Value = batch(ii,8);
+                app.BeatforSineHzEditField.Value = batch(ii,8);
                 app.DurationmsEditField.Value = batch(ii,9);
                 %set lower / upper limit
                 app.LowerlimitVmEditField.Value = batch(ii,10);
@@ -842,6 +842,16 @@
         % Selection changed function: TypeButtonGroup
         function TypeButtonGroupSelectionChanged(app, event)
             app.UseWaveformButtonPushed();  
+        end
+
+        % Selection changed function: MembraneModelButtonGroup
+        function MembraneModelButtonGroupSelectionChanged(app, event)
+            app.UseWaveformButtonPushed();            
+        end
+
+        % Value changed function: BeatforSineHzEditField
+        function BeatforSineHzEditFieldValueChanged(app, event)
+            app.UseWaveformButtonPushed();            
         end
     end
 
@@ -1008,75 +1018,76 @@
             app.Image.Position = [47 48 304 72];
             app.Image.ImageSource = 'Logo IFA RGB.gif';
 
-            % Create SENNParametersButtonGroup
-            app.SENNParametersButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
-            app.SENNParametersButtonGroup.TitlePosition = 'centertop';
-            app.SENNParametersButtonGroup.Title = 'SENN Parameters';
-            app.SENNParametersButtonGroup.Position = [881 17 293 221];
+            % Create SENNGhentUWPMParametersButtonGroup
+            app.SENNGhentUWPMParametersButtonGroup = uibuttongroup(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
+            app.SENNGhentUWPMParametersButtonGroup.TitlePosition = 'centertop';
+            app.SENNGhentUWPMParametersButtonGroup.Title = 'SENN (Ghent U.) & WPM Parameters';
+            app.SENNGhentUWPMParametersButtonGroup.Position = [879 17 296 221];
 
-            % Create MembraneGhentUButtonGroup
-            app.MembraneGhentUButtonGroup = uibuttongroup(app.SENNParametersButtonGroup);
-            app.MembraneGhentUButtonGroup.Title = 'Membrane (Ghent U.)';
-            app.MembraneGhentUButtonGroup.Position = [11 57 130 136];
+            % Create MembraneModelButtonGroup
+            app.MembraneModelButtonGroup = uibuttongroup(app.SENNGhentUWPMParametersButtonGroup);
+            app.MembraneModelButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @MembraneModelButtonGroupSelectionChanged, true);
+            app.MembraneModelButtonGroup.Title = 'Membrane Model';
+            app.MembraneModelButtonGroup.Position = [11 57 109 136];
 
             % Create HHButton
-            app.HHButton = uitogglebutton(app.MembraneGhentUButtonGroup);
+            app.HHButton = uitogglebutton(app.MembraneModelButtonGroup);
             app.HHButton.Text = 'HH';
-            app.HHButton.Position = [18 89 50 22];
-            app.HHButton.Value = true;
+            app.HHButton.Position = [31 89 50 22];
 
             % Create FHButton
-            app.FHButton = uitogglebutton(app.MembraneGhentUButtonGroup);
+            app.FHButton = uitogglebutton(app.MembraneModelButtonGroup);
             app.FHButton.Text = 'FH';
-            app.FHButton.Position = [17 67 51 22];
+            app.FHButton.Position = [30 67 51 22];
+            app.FHButton.Value = true;
 
             % Create CRRSSButton
-            app.CRRSSButton = uitogglebutton(app.MembraneGhentUButtonGroup);
+            app.CRRSSButton = uitogglebutton(app.MembraneModelButtonGroup);
             app.CRRSSButton.Text = 'CRRSS';
-            app.CRRSSButton.Position = [17 45 52 22];
+            app.CRRSSButton.Position = [30 45 52 22];
 
             % Create SEButton
-            app.SEButton = uitogglebutton(app.MembraneGhentUButtonGroup);
+            app.SEButton = uitogglebutton(app.MembraneModelButtonGroup);
             app.SEButton.Text = 'SE';
-            app.SEButton.Position = [18 23 50 22];
+            app.SEButton.Position = [31 23 50 22];
 
             % Create SRBButton
-            app.SRBButton = uitogglebutton(app.MembraneGhentUButtonGroup);
+            app.SRBButton = uitogglebutton(app.MembraneModelButtonGroup);
             app.SRBButton.Text = 'SRB';
-            app.SRBButton.Position = [19 2 49 22];
+            app.SRBButton.Position = [32 2 49 22];
 
             % Create DmmEditFieldLabel
-            app.DmmEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
+            app.DmmEditFieldLabel = uilabel(app.SENNGhentUWPMParametersButtonGroup);
             app.DmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.DmmEditFieldLabel.Position = [140 28 55 22];
+            app.DmmEditFieldLabel.Position = [137 28 55 22];
             app.DmmEditFieldLabel.Text = 'D (mm)';
 
             % Create DmmEditField
-            app.DmmEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
-            app.DmmEditField.Position = [210 28 69 20];
+            app.DmmEditField = uieditfield(app.SENNGhentUWPMParametersButtonGroup, 'numeric');
+            app.DmmEditField.Position = [207 28 69 20];
             app.DmmEditField.Value = 0.02;
 
             % Create LmmEditFieldLabel
-            app.LmmEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
+            app.LmmEditFieldLabel = uilabel(app.SENNGhentUWPMParametersButtonGroup);
             app.LmmEditFieldLabel.HorizontalAlignment = 'right';
-            app.LmmEditFieldLabel.Position = [140 6 55 22];
+            app.LmmEditFieldLabel.Position = [137 6 55 22];
             app.LmmEditFieldLabel.Text = 'L (mm)';
 
             % Create LmmEditField
-            app.LmmEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
-            app.LmmEditField.Position = [210 6 69 20];
+            app.LmmEditField = uieditfield(app.SENNGhentUWPMParametersButtonGroup, 'numeric');
+            app.LmmEditField.Position = [207 6 69 20];
             app.LmmEditField.Value = 20.5;
 
             % Create ReillysValuesButton
-            app.ReillysValuesButton = uibutton(app.SENNParametersButtonGroup, 'push');
+            app.ReillysValuesButton = uibutton(app.SENNGhentUWPMParametersButtonGroup, 'push');
             app.ReillysValuesButton.ButtonPushedFcn = createCallbackFcn(app, @ReillysValuesButtonPushed, true);
             app.ReillysValuesButton.Position = [11 22 100 22];
             app.ReillysValuesButton.Text = 'Reilly''s Values';
 
             % Create ActivationmodeButtonGroup
-            app.ActivationmodeButtonGroup = uibuttongroup(app.SENNParametersButtonGroup);
+            app.ActivationmodeButtonGroup = uibuttongroup(app.SENNGhentUWPMParametersButtonGroup);
             app.ActivationmodeButtonGroup.Title = 'Activation mode';
-            app.ActivationmodeButtonGroup.Position = [150 109 130 82];
+            app.ActivationmodeButtonGroup.Position = [147 109 130 82];
 
             % Create APpropagationButton
             app.APpropagationButton = uitogglebutton(app.ActivationmodeButtonGroup);
@@ -1090,25 +1101,25 @@
             app.TerminalfiringrateButton.Position = [7 9 115 22];
 
             % Create nAPsEditFieldLabel
-            app.nAPsEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
+            app.nAPsEditFieldLabel = uilabel(app.SENNGhentUWPMParametersButtonGroup);
             app.nAPsEditFieldLabel.HorizontalAlignment = 'right';
-            app.nAPsEditFieldLabel.Position = [145 80 55 22];
+            app.nAPsEditFieldLabel.Position = [142 80 55 22];
             app.nAPsEditFieldLabel.Text = 'nAPs';
 
             % Create nAPsEditField
-            app.nAPsEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
-            app.nAPsEditField.Position = [215 80 69 20];
+            app.nAPsEditField = uieditfield(app.SENNGhentUWPMParametersButtonGroup, 'numeric');
+            app.nAPsEditField.Position = [212 80 69 20];
             app.nAPsEditField.Value = 1;
 
             % Create APdursEditFieldLabel
-            app.APdursEditFieldLabel = uilabel(app.SENNParametersButtonGroup);
+            app.APdursEditFieldLabel = uilabel(app.SENNGhentUWPMParametersButtonGroup);
             app.APdursEditFieldLabel.HorizontalAlignment = 'right';
-            app.APdursEditFieldLabel.Position = [145 58 55 22];
+            app.APdursEditFieldLabel.Position = [142 58 55 22];
             app.APdursEditFieldLabel.Text = 'APdur [s]';
 
             % Create APdursEditField
-            app.APdursEditField = uieditfield(app.SENNParametersButtonGroup, 'numeric');
-            app.APdursEditField.Position = [215 58 69 20];
+            app.APdursEditField = uieditfield(app.SENNGhentUWPMParametersButtonGroup, 'numeric');
+            app.APdursEditField.Position = [212 58 69 20];
 
             % Create CalculateGSENNButton
             app.CalculateGSENNButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
@@ -1226,7 +1237,7 @@
             % Create PredefinedWaveformPanel
             app.PredefinedWaveformPanel = uipanel(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure);
             app.PredefinedWaveformPanel.Title = 'Predefined Waveform';
-            app.PredefinedWaveformPanel.Position = [1399 17 180 221];
+            app.PredefinedWaveformPanel.Position = [1392 17 187 221];
 
             % Create TypeButtonGroup
             app.TypeButtonGroup = uibuttongroup(app.PredefinedWaveformPanel);
@@ -1248,7 +1259,7 @@
             % Create FrequencyHzEditFieldLabel
             app.FrequencyHzEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
             app.FrequencyHzEditFieldLabel.HorizontalAlignment = 'right';
-            app.FrequencyHzEditFieldLabel.Position = [6 94 94 22];
+            app.FrequencyHzEditFieldLabel.Position = [10 94 94 22];
             app.FrequencyHzEditFieldLabel.Text = 'Frequency (Hz):';
 
             % Create FrequencyHzEditField
@@ -1261,7 +1272,7 @@
             % Create AmplitudeVmEditField_2Label
             app.AmplitudeVmEditField_2Label = uilabel(app.PredefinedWaveformPanel);
             app.AmplitudeVmEditField_2Label.HorizontalAlignment = 'right';
-            app.AmplitudeVmEditField_2Label.Position = [6 25 94 22];
+            app.AmplitudeVmEditField_2Label.Position = [9 25 94 22];
             app.AmplitudeVmEditField_2Label.Text = 'Amplitude (V/m):';
 
             % Create AmplitudeVmEditField
@@ -1273,7 +1284,7 @@
             % Create DurationmsEditFieldLabel
             app.DurationmsEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
             app.DurationmsEditFieldLabel.HorizontalAlignment = 'right';
-            app.DurationmsEditFieldLabel.Position = [6 2 94 22];
+            app.DurationmsEditFieldLabel.Position = [9 2 94 22];
             app.DurationmsEditFieldLabel.Text = 'Duration (ms):';
 
             % Create DurationmsEditField
@@ -1286,7 +1297,7 @@
             % Create PhaseEditFieldLabel
             app.PhaseEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
             app.PhaseEditFieldLabel.HorizontalAlignment = 'right';
-            app.PhaseEditFieldLabel.Position = [6 48 94 22];
+            app.PhaseEditFieldLabel.Position = [9 48 94 22];
             app.PhaseEditFieldLabel.Text = 'Phase (°):';
 
             % Create PhaseEditField
@@ -1295,16 +1306,17 @@
             app.PhaseEditField.ValueChangedFcn = createCallbackFcn(app, @PhaseEditFieldValueChanged, true);
             app.PhaseEditField.Position = [117 48 53 22];
 
-            % Create BeatHzEditFieldLabel
-            app.BeatHzEditFieldLabel = uilabel(app.PredefinedWaveformPanel);
-            app.BeatHzEditFieldLabel.HorizontalAlignment = 'right';
-            app.BeatHzEditFieldLabel.Position = [6 71 94 22];
-            app.BeatHzEditFieldLabel.Text = 'Beat (Hz) ';
+            % Create BeatforSineHzLabel
+            app.BeatforSineHzLabel = uilabel(app.PredefinedWaveformPanel);
+            app.BeatforSineHzLabel.HorizontalAlignment = 'right';
+            app.BeatforSineHzLabel.Position = [-1 71 104 22];
+            app.BeatforSineHzLabel.Text = 'Beat for Sine (Hz):';
 
-            % Create BeatHzEditField
-            app.BeatHzEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
-            app.BeatHzEditField.Limits = [0 Inf];
-            app.BeatHzEditField.Position = [117 71 53 22];
+            % Create BeatforSineHzEditField
+            app.BeatforSineHzEditField = uieditfield(app.PredefinedWaveformPanel, 'numeric');
+            app.BeatforSineHzEditField.Limits = [0 Inf];
+            app.BeatforSineHzEditField.ValueChangedFcn = createCallbackFcn(app, @BeatforSineHzEditFieldValueChanged, true);
+            app.BeatforSineHzEditField.Position = [117 71 53 22];
 
             % Create RunBatchButton
             app.RunBatchButton = uibutton(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure, 'push');
@@ -1324,7 +1336,7 @@
             app.Menu2.Text = 'Menu2';
             
             % Assign app.ContextMenu
-            app.MembraneGhentUButtonGroup.ContextMenu = app.ContextMenu;
+            app.MembraneModelButtonGroup.ContextMenu = app.ContextMenu;
             app.ActivationmodeButtonGroup.ContextMenu = app.ContextMenu;
 
             % Show the figure after all components are created

@@ -1,1 +1,10 @@
 *.mlapp
+*.txt
+*.mat
+SENN PC Installation folder/SENN_PC_3-20-11/data.out
+SENN PC Installation folder/SENN_PC_3-20-11/XYIN
+SENN PC Installation folder/SENN_PC_3-20-11/XYINTERP
+SENN PC Installation folder/SENN_PC_3-20-11/XYfile.txt
+SENN PC Installation folder/SENN_PC_3-20-11/fort.17
+SENN PC Installation folder/SENN_PC_3-20-11/fort.30
+SENN PC Installation folder/SENN_PC_3-20-11/inparam.txt

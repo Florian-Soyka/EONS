@@ -6,8 +6,8 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  LLconf = str2double(conf); LLIbegin = str2double(Ibegin);LLIend = str2double(Iend);
  LLSearchMode=str2double(SearchMode);
  LLElecInj = str2double(ElecInj); LLSweepActI = str2double(SweepActI);
- sinus_freq = str2double(sinus_freq);
- if nargin >= 27, error('Too many input arguments'); end
+ sinus_freq = str2double(sinus_freq); 
+ if nargin >= 28, error('Too many input arguments'); end
  if nargin >= 18, EONSWaveform = varargin{1}; end
  if nargin >= 19, SolverMaxStep = str2double(varargin{2}); end   
  if nargin >= 20, OrderOfSolution = str2double(varargin{3}); end    
@@ -19,8 +19,11 @@ function SENNfiberCP(Diamet,Ltot,x,y,z,Tp,ancat,monbi,Ibegin,Iend,SearchMode,Swe
  if nargin >= 24, minAPdur = str2double(varargin{7}); end
  if nargin == 25, error('Please also include DynTol'); end
  if nargin >= 26, lltol = str2double(varargin{8}); llDynTol = str2double(varargin{9}); end  
+ PLOT = 1;
+ if nargin >= 27, PLOT = str2double(varargin{10}); end
  
 tic;                            % Start stopwatch timer
+modelstr = {'HH','FH','CRRSS','SE','SRB'};
 Acc = 0;                        % Discretisation accuracy (0 = low, 1 = high)
 reference = 1;                  % Voltage reference. 0: extracellular potential. 1: rest potential. 
 SYMM = 0;                       % Symmetry for reps
@@ -1714,7 +1717,9 @@ appMSOAb = gdivide(appdxb,appdtb);
 end
 
 % 8.4.3. Plot the activation table
+if PLOT
 uifigure = figure();
+end
 nr = size(TablePosandTime,1);
 TablePosandTime = 1000.*TablePosandTime; % position in time in (mm) and (ms) respectively.
 TablePosandTimeCell = num2cell(TablePosandTime);
@@ -1754,11 +1759,18 @@ DATA = horzcat(Activated,Synapse,nrs,TablePosandTimeCell,MSOAfcell,MSOAbcell,app
 else
 DATA = horzcat(Activated,Synapse,nrs,TablePosandTimeCell,MSOAfcell,MSOAbcell);
 end
+if EONS 
+sDATA = horzcat(DATA,xAct);
+save(['Data_SENNSR-' num2str(LLx0s) '-' num2str(LLy0s) '-' num2str(LLz0s) '-'...  
+    num2str(LLTp,5) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr{SENNmodel} '-Conf' num2str(LLconf) ').mat'],'sDATA');
+end
+if PLOT
 ActivationTABLE = uitable(uifigure,'Data',DATA,'RowName',RowName,...
     'ColumnName',ColumnName);   % create the activation table
 ActivationTABLE.Position(3) = ActivationTABLE.Extent(3);  % Adjust the outer rectangle to match the table
 ActivationTABLE.Position(4) = ActivationTABLE.Extent(4);
 set(uifigure,'Position',[500 500 ActivationTABLE.Position(3)+50 ActivationTABLE.Position(4)+50]); % The width of the figure is adjusted to match the table
+end
 end
 end 
 end
@@ -1783,20 +1795,9 @@ if IIelecs > MaxThresh || IIelecs < 0
 end
 end
 end
-    switch SENNmodel
-        case 1 
-            modelstr = 'HH';
-        case 2
-            modelstr = 'FH';
-        case 3
-            modelstr = 'CRRSS';
-        case 4
-            modelstr = 'SE';
-        case 5
-            modelstr = 'SRB';
-    end
+
 Checkpoint=['Sweep-' num2str(LLx0s) '-' num2str(LLy0s) '-' num2str(LLz0s) '-'...  
-    num2str(LLTp) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr '-Conf' num2str(conf) '):' num2str(Ielecs)];
+    num2str(LLTp) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr{SENNmodel} '-Conf' num2str(conf) '):' num2str(Ielecs)];
 if DISPLAY
 fprintf([Checkpoint '\n']);
 end
@@ -1824,7 +1825,7 @@ end
 end
 
            
-if ~SweepActI
+if ~SweepActI && PLOT
 % 9. Plotting the recorders
 if DISPLAY
 disp('4. Calculating plots');
@@ -2503,20 +2504,8 @@ Rbm = SweepActImat(:,:,:,:,:,2)./SweepActImat(:,:,:,:,:,1);
             end
         end
     end
-    switch SENNmodel
-        case 1 
-            modelstr = 'HH';
-        case 2
-            modelstr = 'FH';
-        case 3
-            modelstr = 'CRRSS';
-        case 4
-            modelstr = 'SE';
-        case 5
-            modelstr = 'SRB';
-    end
 save(['SweepSENNSR-' num2str(LLx0s) '-' num2str(LLy0s) '-' num2str(LLz0s) '-'...  
-    num2str(LLTp,5) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr '-Conf' num2str(LLconf) ').mat'],'SweepAct');
+    num2str(LLTp,5) '-' num2str(LLancat) '-' num2str(LLmonbi) '(' modelstr{SENNmodel} '-Conf' num2str(LLconf) ').mat'],'SweepAct');
 %save('x0sValuesSENN_FH_Conf1.mat','x0sValues');
 %save('y0sValuesSENN_FH_Conf1.mat','y0sValues');
 %save('z0sValuesSENN_FH_Conf1.mat','z0sValues');

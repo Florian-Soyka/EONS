@@ -378,11 +378,11 @@
             TMAX = str2double(data_text(index_TMAX:index_NODE-5)); %only two digits precision
             NODE = str2double(data_text(index_NODE:index_NODE_END-2));                        
             
-            %*30 for conversion from mA/cm^2 to V/m and /5.6 due to the safety factor
-            threshold = 30* UIO / 5.6;
+            %*30 for conversion from mA/cm^2 to V/m 
+            threshold = 30* UIO;
 
-            %display results in table
-            EI_upper = ceil(amplitude/threshold*100);
+            %display results in table            
+            EI_upper = ceil(amplitude/(threshold / 5.6)*100); % /5.6 due to the safety factor
             app.ResultsUITable.Data{2,1} = [num2str(EI_upper) ' %'];
             app.ResultsUITable.Data{2,2} = [num2str(threshold,'%.4g')];
             app.ResultsUITable.Data{2,3} = [num2str(TMAX,'%.4g')];
@@ -415,9 +415,9 @@
             DynTol = app.DyntoleranceEditField.Value;
 
             % Applied external field (set to zero to perform titration sweep)
-            Eapp = 5.6*1000*(app.EappVmEditField.Value);   % mV/m applied E-field 
-            % The EappVmEditField contains the E-field (V/m) with safety factor 5.6 
-            SweepActI = ~Eapp; Ibegin = 5.6*1000*(app.LowerlimitVmEditField.Value); Iend = 5.6*1000*(app.UpperlimitVmEditField.Value);
+            Eapp = 1000*(app.EappVmEditField.Value);   % mV/m applied E-field 
+            % The EappVmEditField contains the E-field (V/m) 
+            SweepActI = ~Eapp; Ibegin = 1000*(app.LowerlimitVmEditField.Value); Iend = 1000*(app.UpperlimitVmEditField.Value);
             SearchMode = (Ibegin||Iend);
 
             % Fixed pars
@@ -436,15 +436,15 @@
             drawnow;
             
             if SweepActI
-            %/5.6 due to the safety factor   /1000 for mV/m -> V/m
+            %  /1000 for mV/m -> V/m
             loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
                 num2str(Tp,5) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
             Threshold = load(loadName);
-            threshold =  0.001*Threshold.SweepAct/5.6;
+            threshold =  0.001*Threshold.SweepAct;
             delete(loadName)
 
-            %display results in table
-            EI_upper = ceil(amplitude/threshold*100);
+            %display results in table            
+            EI_upper = ceil(amplitude/(threshold/5.6)*100); % /5.6 due to the safety factor
             app.ResultsUITable.Data{3,1} = [num2str(EI_upper) ' %'];
             app.ResultsUITable.Data{3,2} = [num2str(threshold,'%.4g')];
             end
@@ -697,7 +697,7 @@
             int_signal = cumtrapz(time, waveform) ./ 0.42;
 
             app.dt = dt;
-            app.StatusLabel.Text = ['Using a predfined waveform.'];
+            app.StatusLabel.Text = ['Using a predefined waveform.'];
             file_length = length(time);
             app.OriginalSignal = zeros(file_length,2);
             app.OriginalSignal(:,1) = time;
@@ -745,8 +745,6 @@
             %(us), order of solution, type (1=sine, 2=pulse), frequency
             %(Hz), beat (Hz), duration (ms), lower limit (V/m), upper limit
             %(V/m), nAPs (-), APdur (s)
-            %use test batch vector:
-            %batch = [1 0.02 20.5 25 1 1 200 50; 2 0.02 20.5 25 1 1 500 50 0 0;];
             
             %read batch vector from file
             [file, path] = uigetfile('*.txt');
@@ -754,7 +752,7 @@
                 file_data = readmatrix(fullfile(path,file));
                 %check file formatting for consistency and stop in case of error
                 if size(file_data,2) ~= 13
-                    uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Batch file seems to have wrong formatting. It needs 10 columns.','Error');
+                    uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Batch file seems to have wrong formatting. It needs 13 columns.','Error');
                     return;
                 end
                 batch = file_data;

@@ -10,7 +10,7 @@ clear all; %#ok<CLALL>
 % Define parameter names for .csv file format
 ParNames = {'model','D','L','max_step','orderofsolution','type','frequency','beat','duration',...
     'lowerlimit','upperlimit','nAPs','APdur'};
-saveName = 'BioEM2022_Abstract2_fullbatch';
+saveName = 'BioEM2022_Abstract2_TI_fc';
 
 % All combinations of the input parameter arrays are generated.
 % The Val-parameters indicate how the parameters are defined:
@@ -25,13 +25,12 @@ orderofsolutionVal = 1;
 typeVal = 1;
 frequencyVal = 1;
 beatVal = 1;
-durationVal = 1;
 lowerlimitVal = 1;
 upperlimitVal = 1;
-nAPsVal = 2;
+nAPsVal = 1;
 APdurVal = 1;
 % ---COMBINE ALL VALUES IN PARVal-----------------------------------------
-PARVal = [modelVal,DVal,LVal,max_stepVal,orderofsolutionVal,typeVal,frequencyVal,beatVal,durationVal,...
+PARVal = [modelVal,DVal,LVal,max_stepVal,orderofsolutionVal,typeVal,frequencyVal,beatVal,...
     lowerlimitVal,upperlimitVal,nAPsVal,APdurVal];
 % ------------------------------------------------------------------------
 model = [1,5,5]; %#ok<*NBRAK>
@@ -40,16 +39,14 @@ L = [20.5];
 max_step = [25];
 orderofsolution = [2];
 type = [1];
-frequency = [1,2,3,5,10,20,30,50,100,200,300,500,1000,2000,3000,...
-    5000,10000,20000,30000,50000,100000];
-beat = [0];
-duration = 1000*min([1./frequency,0.025]);
+frequency = [1000,2000,3000];
+beat = [100];
 lowerlimit = [0];
 upperlimit = [0];
-nAPs = [1,5,5];
-APdur = 0.001;
+nAPs = [1];
+APdur = 0;
 % -------------COMBINE ALL PARAMETERS IN PAR cell--------------------------
-PAR = {model;D;L;max_step;orderofsolution;type;frequency;beat;duration;lowerlimit;...
+PAR = {model;D;L;max_step;orderofsolution;type;frequency;beat;lowerlimit;...
     upperlimit;nAPs;APdur};
 % -------------------------------------------------------------------------
 % CALCULATE EXPLICIT PARValues
@@ -90,5 +87,11 @@ end
 for i=1:size(Config,1)
 Config(i,:) = cellfun(@(x,y) x(y),PARValues',num2cell(IndexList{i}));
 end
+
+Config=horzcat(Config,5*1000*max([1./Config(:,8)],0.005));
+Config = Config(:,[(1:8) 13 (9:12)]);
+
 Config = vertcat(ParNames,num2cell(Config)); 
+
+
 xlswrite(saveName,Config);

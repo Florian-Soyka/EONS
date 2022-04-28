@@ -26,6 +26,7 @@ reference = 1;                  % Voltage reference. 0: extracellular potential.
 SYMM = 0;                       % Symmetry for reps
 DISPLAY = 0;
 EONS = 1;                       % Coupling with EONS (evaluation of non-sinusoidal magnetic fields) solver 
+MaxThresh = 10000*10^3;         % Maximal threshold considered while SweepActI = 1, SearchMode = 0, before Nan value is given
 % The program uses the extracellular potential reference to make all calculations, this option is
 % only for plotting.
 
@@ -140,7 +141,7 @@ end
 if ~exist('SamplingPeriod','var')
     SamplingPeriod = 40;
 end
-dt=min(1e-6*SolverMaxStep,SamplingPeriod/sinus_freq);
+dt=min(1e-6*SolverMaxStep,1/(SamplingPeriod*sinus_freq));
 % -> scalar value: only one time step, because only one simulation time
 
 % 2. Plots and processing
@@ -1431,7 +1432,7 @@ for i = 1:AS
     indAPduri = [];
     end
     while ~isempty(temptimesAPduri)
-    indNextAP = find(diff(temptimesAPduri)>=minAPdur,1)+indAPduri(end);
+    indNextAP = find(cumsum(diff(temptimesAPduri))>=minAPdur,1)+indAPduri(end);
     % If indNextAP is empty, it will have no effect on indAPduri
     % andtimesAPduri will be empty. 
     indAPduri = horzcat(indAPduri,indNextAP); %#ok<AGROW> 
@@ -1777,6 +1778,9 @@ IIelecs = (Ielecs(1)+Ielecs(2))/2;
 PrecisionCheck=((Ielecs(2)-Ielecs(1))<10^(floor(log10(Ielecs(2)))-ElecsPrecision));
 else
 IIelecs = IIelecs*10^(3-2*find(Ielecs));
+if IIelecs > MaxThresh || IIelecs < 0
+   IIelecs = nan; PrecisionCheck = 1; SearchMode = 1;
+end
 end
 end
     switch SENNmodel

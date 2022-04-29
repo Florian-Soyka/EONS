@@ -276,7 +276,6 @@
         function RunSENN_Reilly(app)
             original_directory = pwd;
             %read location of SENN.exe from parameter file
-            %SENN_directory = 'C:\Users\Soyka.Florian\Downloads\SENN PC Installation folder\SENN_PC_3-20-11';
             SENN_directory = app.parameters(1);
             if ~(isfolder(SENN_directory))
                 uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'The SENN folder specified in the parameter file is invalid.','Error');
@@ -306,10 +305,10 @@
             if (str2double(NTRP)>13 || duration>0.5 || duration<0.002)
                 uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,'Signal duration should be between 2 and 500 ms.','Warning','Icon','warning');
             end
-            
+
             %number of consecutive nodes that have to be over VTH in order to have an action potential
             num_nodes = 3;
-            
+
             inparam_str = [' MONOPHASIC' newline ' &FIBER' newline ' NNODES=51,' newline ' NLIN1=1,' newline ' NLIN2=51,' newline ' NODE1=22,' newline ' DIAM=0.0020,' newline ' GAP=0.00025,' newline ' CM=2.0,' newline ' GM=30.365,' newline ' RHOI=110.0,' newline ' RHOE=300.0,' newline ' &END' newline];
             inparam_str = [inparam_str ' &STIMULUS' newline ' XC=0.0,' newline ' YC=1.0,' newline ' XA=100.0,' newline ' YA=100.0,' newline ' WIREL=0.85,' newline ' IWAVE=13,' newline ' UIO=1,' newline ' XPD=' dur_string ',' newline ' UIO2=0.0,' newline ' XPD2=0.0,' newline ' DELAY=0.0,' newline ' FREQ=50,' newline];
             inparam_str = [inparam_str ' PHASE=0.0,' newline ' FREQ2=0.0,' newline ' PHASE2=0.0,' newline ' AMP2=0.0,' newline ' NSINES=10,' newline ' DCOFF=0.0,' newline ' TAUS=0.0,' newline ' VREF=0.0,' newline ' NP=1,' newline ' FS=1,' newline ' S=1,' newline ' NTRP=' NTRP ',' newline ' &END' newline];
@@ -352,7 +351,7 @@
                 cd(original_directory);
                 return;
             end
-            
+
             for ii=length(indices):-1:1
                 index_start = indices(ii) + 6;
                 index_end = indices(ii) + strfind(data_text(indices(ii):indices(ii)+20),'TMAX') -2;
@@ -360,13 +359,13 @@
                 if (nodes >= num_nodes)
                     break;
                 end
-            end            
-            
+            end
+
             index = indices(ii); %this is the index poiniting to #NODES
             %extract UIO, TMAX and NODE
             %go back to find UIO
             index_UIO = strfind(data_text(index-20:index),'UIO')-20+2+index; %+2 from UIO
-            index_TMAX = strfind(data_text(index:index+20),'TMAX')+3+index; %+3 from TMAX            
+            index_TMAX = strfind(data_text(index:index+20),'TMAX')+3+index; %+3 from TMAX
             index_NODE = strfind(data_text(index+6:index+30),'NODE')+6+3+index; %+6 from #NODES, +3 from NODE
             %can be followed by CMB or by ITER if it is the last index
             index_NODE_END = strfind(data_text(index_NODE:index_NODE+10),'CMB')+index_NODE;
@@ -374,14 +373,14 @@
                 index_NODE_END = strfind(data_text(index_NODE:index_NODE+10),'IT')+index_NODE;
             end
 
-            UIO = str2double(data_text(index_UIO:index-1));                        
+            UIO = str2double(data_text(index_UIO:index-1));
             TMAX = str2double(data_text(index_TMAX:index_NODE-5)); %only two digits precision
-            NODE = str2double(data_text(index_NODE:index_NODE_END-2));                        
-            
-            %*30 for conversion from mA/cm^2 to V/m 
+            NODE = str2double(data_text(index_NODE:index_NODE_END-2));
+
+            %*30 for conversion from mA/cm^2 to V/m
             threshold = 30* UIO;
 
-            %display results in table            
+            %display results in table
             EI_upper = ceil(amplitude/(threshold / 5.6)*100); % /5.6 due to the safety factor
             app.ResultsUITable.Data{2,1} = [num2str(EI_upper) ' %'];
             app.ResultsUITable.Data{2,2} = [num2str(threshold,'%.4g')];
@@ -415,14 +414,19 @@
             DynTol = app.DyntoleranceEditField.Value;
 
             % Applied external field (set to zero to perform titration sweep)
-            Eapp = 1000*(app.EappVmEditField.Value);   % mV/m applied E-field 
-            % The EappVmEditField contains the E-field (V/m) 
+            Eapp = 1000*(app.EappVmEditField.Value);   % mV/m applied E-field
+            % The EappVmEditField contains the E-field (V/m)
             SweepActI = ~Eapp; Ibegin = 1000*(app.LowerlimitVmEditField.Value); Iend = 1000*(app.UpperlimitVmEditField.Value);
             SearchMode = (Ibegin||Iend);
 
             % Fixed pars
-            conf = 0; Tp = duration; x = 0; y = 0; z = 0; 
+            conf = 0; Tp = duration; x = 0; y = 0; z = 0;
             ancat = 1; monbi = 1;
+
+            loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
+                num2str(Tp,5) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
+            dataName = ['Data_SENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
+                num2str(Tp,5) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
 
             app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Running - Please wait'];
             drawnow;
@@ -432,21 +436,42 @@
                 num2str(SweepActI),num2str(Eapp),num2str(model),num2str(conf),...
                 'nofilename',num2str(sinus_freq),app.Derivative,num2str(SolverMaxStep),num2str(OrderOfSolution),num2str(SamplingPeriod),...
                 num2str(ActivationDetectionMode),num2str(ThreshnAPs),num2str(minAPdur),num2str(tol),num2str(DynTol));
-            app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished'];
-            drawnow;
-            
+            if ~SweepActI
+                delete(dataName);
+            end
             if SweepActI
-            %  /1000 for mV/m -> V/m
-            loadName = ['SweepSENNSR-' num2str(x) '-' num2str(y) '-' num2str(z) '-' ...
-                num2str(Tp,5) '-' num2str(ancat) '-' num2str(monbi) '(' modelNames{model} '-Conf' num2str(conf) ').mat'];
-            Threshold = load(loadName);
-            threshold =  0.001*Threshold.SweepAct;
-            delete(loadName)
+                %  /1000 for mV/m -> V/m
+                Threshold = load(loadName);
+                threshold =  0.001*Threshold.SweepAct;
+                delete(loadName); %delete(dataName)
 
-            %display results in table            
-            EI_upper = ceil(amplitude/(threshold/5.6)*100); % /5.6 due to the safety factor
-            app.ResultsUITable.Data{3,1} = [num2str(EI_upper) ' %'];
-            app.ResultsUITable.Data{3,2} = [num2str(threshold,'%.4g')];
+                % run SENN to determine NODE and TMAX
+                Eapp = 1.01*1000*threshold; % mV/m
+                SweepActI = 0;
+                SENNfiberCP(num2str(Diamet),num2str(Ltot),num2str(x),num2str(y),num2str(z),num2str(Tp),...
+                    num2str(ancat),num2str(monbi),num2str(Ibegin),num2str(Iend),num2str(SearchMode),...
+                    num2str(SweepActI),num2str(Eapp),num2str(model),num2str(conf),...
+                    'nofilename',num2str(sinus_freq),app.Derivative,num2str(SolverMaxStep),num2str(OrderOfSolution),num2str(SamplingPeriod),...
+                    num2str(ActivationDetectionMode),num2str(ThreshnAPs),num2str(minAPdur),num2str(tol),num2str(DynTol),'0');
+                app.StatusLabel.Text = ['SENN (' modelNames{model} ',L=' num2str(Ltot) ',D=' num2str(Diamet) ') Finished'];
+                drawnow;
+                delete(loadName)
+
+                %display results in table
+                EI_upper = ceil(amplitude/(threshold/5.6)*100); % /5.6 due to the safety factor
+                if exist(dataName)
+                    tableDAT = load(dataName);
+                    delete(dataName)
+                    [TMAX,iTMAX] = min(tableDAT.sDATA{5});       % ms
+                    NODE = tableDAT.sDATA{4}(iTMAX);             % mm
+                    NNODE = find(NODE*10^(-3)==tableDAT.sDATA{8}); % Node number
+                else
+                    NODE = nan; NNODE = nan; TMAX = nan;
+                end
+                app.ResultsUITable.Data{3,1} = [num2str(EI_upper) ' %'];
+                app.ResultsUITable.Data{3,2} = [num2str(threshold,'%.4g')];
+                app.ResultsUITable.Data{3,3} = [num2str(TMAX,'%.4g')];
+                app.ResultsUITable.Data{3,4} = [num2str(NNODE,'%.2g')];
             end
         end
     end
@@ -527,7 +552,7 @@
 
         % Button pushed function: HelpAboutButton
         function HelpAboutButtonPushed(app, event)
-            uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,{'See Manual.pdf for help.';'For inquiries contact florian.soyka@dguv.de'},'Help / About','Icon','');
+            uialert(app.EvaluationofNonSinusoidalMagneticFieldsUIFigure,{'For inquiries contact florian.soyka@dguv.de or Thomas.Tarnaud@UGent.be'},'Help / About','Icon','');
         end
 
         % Button pushed function: ResetSignalButton
@@ -661,7 +686,7 @@
 
             %Amplitude for the E field
             amplitude = app.AmplitudeVmEditField.Value;
-            
+
             %Phase for the E field
             phase = app.PhaseEditField.Value;
 
@@ -678,14 +703,14 @@
                 end
                 %caculate the start index based on the phase settings
                 startindex = find(time >= phase/360 * duration,1);
-                
+
                 if(~isempty(startindex)) %otherwise we're done
                     endindex = startindex + index -1;
                     if( endindex > length(time))
                         endindex = length(time);
                     end
                     waveform(startindex:endindex) = ones(endindex-startindex+1,1);
-                    waveform = waveform .* amplitude;                   
+                    waveform = waveform .* amplitude;
                 end
             else
                 %sine
@@ -727,12 +752,12 @@
 
         % Value changed function: AmplitudeVmEditField
         function AmplitudeVmEditFieldValueChanged(app, event)
-            app.UseWaveformButtonPushed();            
+            app.UseWaveformButtonPushed();
         end
 
         % Value changed function: DurationmsEditField
         function DurationmsEditFieldValueChanged(app, event)
-            app.UseWaveformButtonPushed();            
+            app.UseWaveformButtonPushed();
         end
 
         % Button pushed function: RunBatchButton
@@ -740,12 +765,12 @@
             %run a batch process for Ghent U. simulations - R-SENN needs user input so it cannot be batch processed properly
             %start by defining a batch vector here. Later this can be read from a file
             %set parameters, run G-SENN, save intermediate results, iterate
-            
+
             %parameters: model (1-5, HH - SRB), D (mm), L (mm), max_step
             %(us), order of solution, type (1=sine, 2=pulse), frequency
             %(Hz), beat (Hz), duration (ms), lower limit (V/m), upper limit
             %(V/m), nAPs (-), APdur (s)
-            
+
             %read batch vector from file
             [file, path] = uigetfile('*.txt');
             if ~isequal(file,0)
@@ -759,13 +784,13 @@
             else
                 return;
             end
-            
+
             %initialize empty results vector
             results = [];
             filename = ['results ' datestr(now,'dd.mm.yyyy HH_MM_SS') '.mat'];
             %iterate batch vector
             for ii = 1:size(batch,1)
-                %append current conditions and mark result as invalid (-1) so far               
+                %append current conditions and mark result as invalid (-1) so far
                 results = [results; batch(ii,:) -1];
                 %save intermediate results
                 save(filename, "results");
@@ -824,7 +849,7 @@
                 %"push" UseWaveformButton
                 app.UseWaveformButtonPushed();
                 %run G-SENN
-                app.RunSENN_GhentU(); 
+                app.RunSENN_GhentU();
                 %put results in vector
                 results(end) = str2double(app.ResultsUITable.Data{3,2});
             end
@@ -834,22 +859,22 @@
 
         % Value changed function: PhaseEditField
         function PhaseEditFieldValueChanged(app, event)
-            app.UseWaveformButtonPushed();             
+            app.UseWaveformButtonPushed();
         end
 
         % Selection changed function: TypeButtonGroup
         function TypeButtonGroupSelectionChanged(app, event)
-            app.UseWaveformButtonPushed();  
+            app.UseWaveformButtonPushed();
         end
 
         % Selection changed function: MembraneModelButtonGroup
         function MembraneModelButtonGroupSelectionChanged(app, event)
-            app.UseWaveformButtonPushed();            
+            app.UseWaveformButtonPushed();
         end
 
         % Value changed function: BeatforSineHzEditField
         function BeatforSineHzEditFieldValueChanged(app, event)
-            app.UseWaveformButtonPushed();            
+            app.UseWaveformButtonPushed();
         end
     end
 

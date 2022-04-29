@@ -1,11 +1,11 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration file="C:\Users\Soyka.Florian\Downloads\EONS\Repo\EONS\EvaluationofNon-SinusoidalMagneticFields.prj" location="C:\Users\Soyka.Florian\Downloads\EONS\Repo\EONS" name="EvaluationofNon-SinusoidalMagneticFields" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="2332556644" file="C:\Users\Soyka.Florian\Downloads\EONS\Repo\EONS\EvaluationofNon-SinusoidalMagneticFields.prj" location="C:\Users\Soyka.Florian\Downloads\EONS\Repo\EONS" name="EvaluationofNon-SinusoidalMagneticFields" preferred-package-location="C:\Users\Soyka.Florian\Downloads\EONS\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>EONS</param.appname>
     <param.icon />
     <param.icons />
-    <param.version>1.0</param.version>
-    <param.authnamewatermark />
-    <param.email />
+    <param.version>0.9.2</param.version>
+    <param.authnamewatermark>Florian Soyka &amp; Thomas Tarnaud</param.authnamewatermark>
+    <param.email>florian.soyka@dguv.de</param.email>
     <param.company />
     <param.summary />
     <param.description />
@@ -27,7 +27,7 @@
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
-    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.web.mcr.name>EONS_Installer</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
@@ -45,9 +45,6 @@
     <unset>
       <param.icon />
       <param.icons />
-      <param.version />
-      <param.authnamewatermark />
-      <param.email />
       <param.company />
       <param.summary />
       <param.description />
@@ -65,7 +62,6 @@
       <param.web.mcr />
       <param.package.mcr />
       <param.no.mcr />
-      <param.web.mcr.name />
       <param.package.mcr.name />
       <param.no.mcr.name />
       <param.windows.command.prompt />
@@ -78,13 +74,21 @@
     <fileset.main>
       <file>${PROJECT_ROOT}\EONS.mlapp</file>
     </fileset.main>
-    <fileset.resources />
+    <fileset.resources>
+      <file>${PROJECT_ROOT}\icon_UGent_EA_EN_RGB_color.eps</file>
+      <file>${PROJECT_ROOT}\logo_UGent_EN_RGB_color.eps</file>
+    </fileset.resources>
     <fileset.package>
-      <file>C:\Users\Soyka.Florian\Downloads\EONS\for_testing\EONS_parameters.txt</file>
+      <file>${PROJECT_ROOT}\EONS_parameters.txt</file>
+      <file>${PROJECT_ROOT}\LICENSE</file>
+      <file>${PROJECT_ROOT}\README.md</file>
+      <file>${PROJECT_ROOT}\SENN PC Installation folder</file>
+      <file>${PROJECT_ROOT}\waveforms</file>
     </fileset.package>
     <fileset.depfun>
       <file>${PROJECT_ROOT}\gadd.m</file>
       <file>${PROJECT_ROOT}\gdivide.m</file>
+      <file>${PROJECT_ROOT}\GhentU_WAVES_FEA.svg</file>
       <file>${PROJECT_ROOT}\gmultiply.m</file>
       <file>${PROJECT_ROOT}\gsubtract.m</file>
       <file>${PROJECT_ROOT}\Logo IFA RGB.gif</file>
